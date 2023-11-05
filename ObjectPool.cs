@@ -9,6 +9,7 @@ namespace Lab4
     public class ObjectPool<T> where T : GameObject, new()
     {
         private List<T> _objects;
+        private int _maxAmountOfObjects;
         public ObjectPool(int initialNumberOfObjects) 
         {
             if (initialNumberOfObjects < 0)
@@ -22,6 +23,14 @@ namespace Lab4
                 obj.SetActive(false);
                 _objects.Add(obj);
             }
+        }
+        public ObjectPool(int initialNumberOfObjects, int maxAmountOfObjects) : this(initialNumberOfObjects)
+        {
+            if (maxAmountOfObjects < 0)
+            { 
+                throw new ArgumentOutOfRangeException(); 
+            }
+            _maxAmountOfObjects = maxAmountOfObjects;
         }
         public T Get()
         {

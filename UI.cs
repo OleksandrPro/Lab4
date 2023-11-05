@@ -68,7 +68,7 @@ namespace Lab4
                 newPlatform.Position = new Vector2f(p.X, p.Y);
                 newPlatform.FillColor = Color.Cyan;
                 Platforms.Add(newPlatform);
-                _controller.AddPlatformCollider(p, newPlatform.GetGlobalBounds());
+//                _controller.AddPlatformCollider(p, newPlatform.GetGlobalBounds());
             }            
         }
         private void SetBarrier(Level level)
@@ -93,7 +93,7 @@ namespace Lab4
         {
             _idleAnimationData.MoveToNext();
             CurrentPlayerModel = _idleAnimationData.GetCurrent();
-            CurrentPlayerModel.Position = _controller.GetPlayerPosition();
+//            CurrentPlayerModel.Position = _controller.GetPlayerPosition();
         }
         //public void PlayerAnimator()
         //{

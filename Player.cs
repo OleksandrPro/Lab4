@@ -13,7 +13,6 @@ namespace Lab4
     {
         private int _x;
         private int _y;
-        public int VerticalSpeed { get; set; }
         public int Height { get; set; }
         public int Width { get; set; }
         public FloatRect Collider { get; set; }
@@ -55,14 +54,6 @@ namespace Lab4
             Y = y;
             Height = height;
             Width = width;
-            VerticalSpeed = 0;
-//            Colider = new Engine.BoxColider(x, y, width, height);
-//            NewPosition += Colider.updateColiderPos;
-        }
-//        public Player(float radius) : this(0, 0) { }
-        public void increaseVerticalSpeed(int speedValue)
-        {
-            Y += speedValue;
         }
     }
 }

@@ -19,25 +19,21 @@ namespace Lab4
         static void Main()
         {
             RenderWindow MainWindow = new RenderWindow(new VideoMode(1300, 800), "Yonko's adventures");
-//            RenderWindow MainWindow = new RenderWindow(new VideoMode(2000, 1500), "Yonko's adventures");
             MainWindow.SetFramerateLimit(30);
             MainWindow.Closed += new EventHandler(OnClose);
-            Controller controller = new Controller(MainWindow);
+
+            View visual = new View(MainWindow);
+            Model model = new Model();
+            Controller controller = new Controller(visual, model);
+
+            visual.AddController(controller);
+            model.AddController(controller);
+            controller.RenderLevel();
 
             while (MainWindow.IsOpen)
             {
-                MainWindow.DispatchEvents();                
-                MainWindow.Clear(new Color(Color.White));
-                MainWindow.Draw(controller.UIElements.CurrentPlayerModel);
-                foreach (var p in controller.UIElements.Platforms)
-                {
-                    MainWindow.Draw(p);
-                }
-//                controller.UIElements.PlayIdleAnimation();
-//                controller.Update();
-                //                Controller.UIElements.PlayerAnimator();
-                //                Controller.player.increaseVerticalSpeed(1);
-                MainWindow.Display();
+                MainWindow.DispatchEvents();
+                visual.DrawScene();
             }
         }
 
