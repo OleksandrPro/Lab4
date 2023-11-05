@@ -16,6 +16,9 @@ namespace Lab4
         public int Height { get; set; }
         public int Width { get; set; }
         public FloatRect Collider { get; set; }
+        private PlayerStateMachine _states;
+        public PlayerState CurrentState { get; set; }
+        public bool IsStanding { get; set; }
         public int X 
         {  
             get
@@ -24,8 +27,13 @@ namespace Lab4
             }
             set
             {
-                if (value != _x)
+                if (_x == value)
                 {
+                    IsStanding = true;
+                }
+                else
+                {
+                    IsStanding = false;
                     _x = value;
                     NewPosition?.Invoke(this, new ChangePositionEventArgs(_x, _y));
                 }
@@ -54,6 +62,42 @@ namespace Lab4
             Y = y;
             Height = height;
             Width = width;
+            _states = new PlayerStateMachine();
+            _states.EnterIn<IdleRight>();
+            CurrentState = _states._currentState;
+            IsStanding = true;
+        }
+        public void ChangeState<TypeOfState>() where TypeOfState : PlayerState
+        {
+            _states.EnterIn<TypeOfState>();
+            CurrentState = _states._currentState;
+        }
+        public void Move(int x, int y)
+        {
+            
+//            CurrentState.Move();
+            X += x;
+            Y += y;
+        }
+        public void BackToIdle()
+        {
+            CurrentState.BackToIdle();
+        }
+        public void BackToMoving()
+        {
+            CurrentState.BackToMoving();
+        }
+        public void Update(bool b)
+        {
+            if (IsStanding != b)
+            {
+                BackToMoving();
+                IsStanding = b;
+            }
+            else
+            {
+                BackToIdle();
+            }
         }
     }
 }

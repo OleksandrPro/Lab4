@@ -33,6 +33,7 @@ namespace Lab4
             while (MainWindow.IsOpen)
             {
                 MainWindow.DispatchEvents();
+                controller.Update();
                 visual.DrawScene();
             }
         }

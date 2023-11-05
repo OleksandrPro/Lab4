@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace Lab4
 {
-    internal interface IPlayerState
+    public interface IPlayerState
     {
+//        PlayerStateMachine PlayerStateMachine { get; }
+        void Enter();
+        void Exit();
+        void Move();
+        void BackToOpposite();
     }
 }

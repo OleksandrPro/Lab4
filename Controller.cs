@@ -21,6 +21,7 @@ namespace Lab4
 
         private Dictionary<Keyboard.Key, DirectionCoeff> MovementMap;
         private const int UNIT_SIZE = 50;
+        private int _playerPrevX;
 
         private struct DirectionCoeff
         {
@@ -37,6 +38,7 @@ namespace Lab4
             _view = viev;
             _model = model;
             viev.GameWindow.KeyPressed += OnKeyPressed;
+//            viev.GameWindow.KeyReleased += OnKeyReleased;
 
             _random = new Random();
             MovementMap = new Dictionary<Keyboard.Key, DirectionCoeff>();
@@ -44,6 +46,7 @@ namespace Lab4
 
             _player = model.currentLevel.player;
             _currentLevel = model.currentLevel;
+            _playerPrevX = _player.X;
 
             _player.NewPosition += UpdatePlayerPos;
             _player.NewPosition += UpdateColliderPosition;
@@ -62,6 +65,7 @@ namespace Lab4
                     {
                         return;
                     }
+                    _player.BackToMoving();
                     MovePlayer(updateX, updateY);
                 }
             }
@@ -94,8 +98,8 @@ namespace Lab4
         }
         public void MovePlayer(int x, int y)
         {
-            _player.X += x;
-            _player.Y += y;
+            _player.Move(x, y);
+            
             Console.WriteLine($"Move player: x = {_player.X}, y = {_player.Y}");
         }
 
@@ -130,6 +134,20 @@ namespace Lab4
         public void AddPlatformCollider(Platform p, FloatRect collider)
         {
             p.Collider = collider;
+        }
+        public void Update()
+        {
+            bool newStanding;
+            if (_playerPrevX != _player.X)
+            {
+                newStanding = false;
+            }
+            else
+            {
+                newStanding = true;
+            }
+            _player.Update(newStanding);
+            _playerPrevX = _player.X;
         }
     }
 }
