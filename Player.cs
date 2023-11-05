@@ -18,6 +18,7 @@ namespace Lab4
         public FloatRect Collider { get; set; }
         private PlayerStateMachine _states;
         public PlayerState CurrentState { get; set; }
+        public Type StateType { get; private set; }
         public bool IsStanding { get; set; }
         public int X 
         {  
@@ -65,12 +66,23 @@ namespace Lab4
             _states = new PlayerStateMachine();
             _states.EnterIn<IdleRight>();
             CurrentState = _states._currentState;
+            StateType = _states.State;
             IsStanding = true;
+            _states.NewState += NewStateHandler;
         }
         public void ChangeState<TypeOfState>() where TypeOfState : PlayerState
         {
-            _states.EnterIn<TypeOfState>();
-            CurrentState = _states._currentState;
+            if (typeof(TypeOfState) != StateType)
+            {
+                _states.EnterIn<TypeOfState>();
+                CurrentState = _states._currentState;
+                StateType = _states.State;
+            }            
+        }
+        public void NewStateHandler(object sender, EventArgs e)
+        {
+            var state = (PlayerStateMachine)sender;
+            StateType = state.State;
         }
         public void Move(int x, int y)
         {
@@ -85,7 +97,11 @@ namespace Lab4
         }
         public void BackToMoving()
         {
-            CurrentState.BackToMoving();
+            if (StateType != typeof(MovingLeft) || StateType != typeof(MovingRight)) 
+            {
+                CurrentState.BackToMoving();
+            }
+            
         }
         public void Update(bool b)
         {

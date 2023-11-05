@@ -12,7 +12,6 @@ namespace Lab4
         public IdleRight(PlayerStateMachine psm) 
         {
             _playerStateMachine = psm;
-            Enter();
         }
         public override void Enter()
         {

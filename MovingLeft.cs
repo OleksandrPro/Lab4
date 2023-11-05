@@ -12,7 +12,6 @@ namespace Lab4
         public MovingLeft(PlayerStateMachine psm)
         {
             _playerStateMachine = psm;
-            Enter();
         }
         public override void Enter()
         {
@@ -22,7 +21,7 @@ namespace Lab4
         public override void Exit()
         {
             Console.WriteLine("player exits MovingLeft state");
-            _playerStateMachine.EnterIn<IdleLeft>();
+//            _playerStateMachine.EnterIn<IdleLeft>();
         }
         public override void Move()
         {
