@@ -29,10 +29,10 @@ namespace Lab4
         {
             if(_states.TryGetValue(typeof(TState), out PlayerState state))
             {
-                _currentState?.Exit();
+//                _currentState?.Exit();
                 _currentState = state;
                 State = state.GetType();
-                _currentState?.Enter();
+//                _currentState?.Enter();
                 NewState?.Invoke(this, new EventArgs());
             }
         } 

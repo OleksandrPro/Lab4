@@ -11,7 +11,7 @@ namespace Lab4
     {
         public bool IsActive {  get; set; }
         public FloatRect Collider { get; set; }
-        protected FloatRect DefaultCollider { get; private set; }
+        public static FloatRect DefaultCollider { get; private set; }
         public GameObject() 
         {
             DefaultCollider = new FloatRect();

@@ -16,7 +16,9 @@ namespace Lab4
 
         public Sprite CurrentPlayerModel;
         private List<RectangleShape> Platforms;
-        private List<Sprite> GameObjects;
+
+        private List<Sprite> FallingObjects;
+
         private LinkedList<Sprite> _idleAnimationData;
 
         private string _folderPathNumbers = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\numbers";
@@ -27,7 +29,7 @@ namespace Lab4
             GameWindow = window;
 
             Platforms = new List<RectangleShape>();
-            GameObjects = new List<Sprite>();
+            FallingObjects = new List<Sprite>();
         }
         public void AddController(Controller controller)
         {
@@ -42,7 +44,7 @@ namespace Lab4
             {
                 GameWindow.Draw(p);
             }
-            foreach (var g in GameObjects)
+            foreach (var g in FallingObjects)
             {
                 GameWindow.Draw(g);
             }
@@ -71,6 +73,7 @@ namespace Lab4
             Texture model = new Texture(_folderPathSingleSprite);
             CurrentPlayerModel = new Sprite(model);
             CurrentPlayerModel.Position = new Vector2f(player.X, player.Y);
+            _controller.AddPlayerCollider();
         }
         private void SetBarrier(Level level)
         {
@@ -86,12 +89,10 @@ namespace Lab4
         public void AddFallingObject(FallingObject fObj)
         {
             Texture model = new Texture(_folderPathFireBallSprite);
-            Sprite newFObj = new Sprite(model);
-            newFObj.Position = new Vector2f(fObj.X, fObj.Y);
-
-//            Console.WriteLine("GameObject sprites: " + GameObjects.Count);
-            GameObjects.Add(newFObj);
-            _controller.AddFallingObjectCollider(fObj, newFObj.GetGlobalBounds());
+            Sprite newFObjSprite = new Sprite(model);
+            newFObjSprite.Position = new Vector2f(fObj.X, fObj.Y);
+            FallingObjects.Add(newFObjSprite);
+            _controller.AddFallingObjectCollider(fObj, newFObjSprite.GetGlobalBounds());
         }
         public void UpdateModelPosition(int x, int y)
         {
@@ -100,19 +101,18 @@ namespace Lab4
         public void UpdateFallingObjectPosition(int y)
         {
             Sprite s = null;
-            foreach (var item in GameObjects)
+            foreach (var item in FallingObjects)
             {
                 item.Position = new Vector2f(item.Position.X, item.Position.Y + y);
-                if (item.Position.Y>=GameWindow.Size.Y)
+                if (item.Position.Y >= GameWindow.Size.Y)
                 {
                     s = item;
                 }
             }
-            if (s!=null)
+            if (s != null)
             {
-                GameObjects.Remove(s);
+                FallingObjects.Remove(s);
             }
-            
         }
     }
 }

@@ -19,7 +19,7 @@ namespace Lab4
         public Model()
         {
             currentLevel = new Level1();
-            _fallingObjects = new ObjectPool<FallingObject>(10);
+            _fallingObjects = new ObjectPool<FallingObject>(1);
             _healingItems = new ObjectPool<HealingItem>(1, 1);
             SpawnedObjects = new List<FallingObject>();
         }
@@ -35,7 +35,7 @@ namespace Lab4
             newFObj.SetActive(true);
             SpawnedObjects.Add(newFObj);
 
-//            Console.WriteLine("Spawned objects: " + SpawnedObjects.Count);
+            Console.WriteLine("Spawned objects: " + SpawnedObjects.Count);
             return newFObj;
         }
         public void DespawnFallingObject(FallingObject obj)
@@ -44,6 +44,7 @@ namespace Lab4
             SpawnedObjects.Remove(obj);
             obj.SetPosition(0, 0);            
             _fallingObjects.Release(obj);
+            Console.WriteLine("Spawned objects: " + SpawnedObjects.Count);
         }
         void SetLevel(Level level) 
         {

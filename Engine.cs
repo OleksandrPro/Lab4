@@ -71,5 +71,21 @@ namespace Lab4
             colider.Width = width;
             colider.Height = height;
         }
+        public static FloatRect ChangeColliderPosition(FloatRect colider, float x, float y)
+        {
+            colider.Left = x;
+            colider.Top = y;
+            return colider;
+        }
+        public static FloatRect ChangeColliderPositionX(FloatRect colider, float x)
+        {
+            colider.Left = x;
+            return colider;
+        }
+        public static FloatRect ChangeColliderPositionY(FloatRect colider, float y)
+        {
+            colider.Top = y;
+            return colider;
+        }
     }
 }

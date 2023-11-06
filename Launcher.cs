@@ -19,7 +19,7 @@ namespace Lab4
         
         static void Main()
         {                      
-            RenderWindow MainWindow = new RenderWindow(new VideoMode(1300, 800), "Yonko's adventures");
+            RenderWindow MainWindow = new RenderWindow(new VideoMode(1300, 900), "Yonko's adventures");
             MainWindow.SetFramerateLimit(60);
             MainWindow.Closed += new EventHandler(OnClose);
 

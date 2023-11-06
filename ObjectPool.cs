@@ -42,7 +42,7 @@ namespace Lab4
             return obj;
         }
         private T Create()
-        {
+        {            
             T obj = new T();            
             _objects.Add(obj);
             return obj;
@@ -50,6 +50,7 @@ namespace Lab4
         public void Release(T obj) 
         {
             obj.SetActive(false);
+            obj.Collider = GameObject.DefaultCollider;
         }        
     }
 }
