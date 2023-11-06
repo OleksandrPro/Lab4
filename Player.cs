@@ -15,11 +15,11 @@ namespace Lab4
         private int _y;
         public int Height { get; set; }
         public int Width { get; set; }
+        public int Health { get; set; }
         public FloatRect Collider { get; set; }
         private PlayerStateMachine _states;
         public PlayerState CurrentState { get; set; }
         public Type StateType { get; private set; }
-        public bool IsStanding { get; set; }
         public int X 
         {  
             get
@@ -28,13 +28,8 @@ namespace Lab4
             }
             set
             {
-                if (_x == value)
+                if (_x != value)
                 {
-                    IsStanding = true;
-                }
-                else
-                {
-                    IsStanding = false;
                     _x = value;
                     NewPosition?.Invoke(this, new ChangePositionEventArgs(_x, _y));
                 }
@@ -56,20 +51,22 @@ namespace Lab4
             }
         }
         public delegate void PositionChanged(object sender, EventArgs e);
-        public event PositionChanged NewPosition;
-        public Player(int x, int y, int width, int height) 
+        public event PositionChanged NewPosition;        
+        public Player(int x, int y, int width, int height, int health)
         {
             X = x;
             Y = y;
             Height = height;
             Width = width;
+            Health = health;
             _states = new PlayerStateMachine();
             _states.EnterIn<IdleRight>();
             CurrentState = _states._currentState;
             StateType = _states.State;
-            IsStanding = true;
             _states.NewState += NewStateHandler;
         }
+        public Player(int x, int y, int width, int height) : this(x, y, width, height, 3) { }
+        
         public void ChangeState<TypeOfState>() where TypeOfState : PlayerState
         {
             if (typeof(TypeOfState) != StateType)
@@ -82,38 +79,31 @@ namespace Lab4
         public void NewStateHandler(object sender, EventArgs e)
         {
             var state = (PlayerStateMachine)sender;
+            CurrentState = state._currentState;
             StateType = state.State;
         }
         public void Move(int x, int y)
         {
-            
-//            CurrentState.Move();
             X += x;
             Y += y;
         }
         public void BackToIdle()
         {
-            CurrentState.BackToIdle();
+            if (StateType != typeof(IdleLeft) && StateType != typeof(IdleRight))
+            {
+                CurrentState.BackToIdle();
+            }                
         }
         public void BackToMoving()
         {
             if (StateType != typeof(MovingLeft) || StateType != typeof(MovingRight)) 
             {
                 CurrentState.BackToMoving();
-            }
-            
+            }            
         }
-        public void Update(bool b)
+        public void GoToOppositeMovingDirection()
         {
-            if (IsStanding != b)
-            {
-                BackToMoving();
-                IsStanding = b;
-            }
-            else
-            {
-                BackToIdle();
-            }
+            CurrentState.GoToOppositeMovingDirection();
         }
     }
 }

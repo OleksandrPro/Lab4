@@ -64,5 +64,12 @@ namespace Lab4
         {
             return rect1.Intersects(rect2);
         }
+        public static void InitCollider(FloatRect colider, float x, float y, float height, float width)
+        {
+            colider.Left = x; 
+            colider.Top = y;
+            colider.Width = width;
+            colider.Height = height;
+        }
     }
 }

@@ -10,8 +10,8 @@ namespace Lab4
     {
         public abstract void Enter();
         public abstract void Exit();
-        public abstract void Move();
         public abstract void BackToMoving();
         public abstract void BackToIdle();
+        public abstract void GoToOppositeMovingDirection();
     }
 }

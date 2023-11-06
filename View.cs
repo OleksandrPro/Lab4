@@ -16,15 +16,18 @@ namespace Lab4
 
         public Sprite CurrentPlayerModel;
         private List<RectangleShape> Platforms;
+        private List<Sprite> GameObjects;
         private LinkedList<Sprite> _idleAnimationData;
 
         private string _folderPathNumbers = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\numbers";
         private string _folderPathSingleSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\newPlaceholder.png";
+        private string _folderPathFireBallSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\fireball2.png";
         public View(RenderWindow window)
         {
             GameWindow = window;
 
             Platforms = new List<RectangleShape>();
+            GameObjects = new List<Sprite>();
         }
         public void AddController(Controller controller)
         {
@@ -38,6 +41,10 @@ namespace Lab4
             foreach (var p in Platforms)
             {
                 GameWindow.Draw(p);
+            }
+            foreach (var g in GameObjects)
+            {
+                GameWindow.Draw(g);
             }
 
             GameWindow.Display();
@@ -68,17 +75,44 @@ namespace Lab4
         private void SetBarrier(Level level)
         {
             int barrierSize = 300;
-            uint windowX = GameWindow.Size.X;
-            uint windowY = GameWindow.Size.Y;
-            level.barrier.Add(new FloatRect(0, -barrierSize, windowX, barrierSize));
-            level.barrier.Add(new FloatRect(0, windowY, windowX, barrierSize));
-            level.barrier.Add(new FloatRect(-barrierSize, 0, barrierSize, windowY));
-            level.barrier.Add(new FloatRect(windowX, 0, barrierSize, windowY));
+            int windowX = (int)GameWindow.Size.X;
+            int windowY = (int)GameWindow.Size.Y;
+            _controller.AddBarrier(0, -barrierSize, windowX, barrierSize);
+            _controller.AddBarrier(0, windowY, windowX, barrierSize);
+            _controller.AddBarrier(-barrierSize, 0, barrierSize, windowY);
+            _controller.AddBarrier(windowX, 0, barrierSize, windowY);
             //xywh
+        }
+        public void AddFallingObject(FallingObject fObj)
+        {
+            Texture model = new Texture(_folderPathFireBallSprite);
+            Sprite newFObj = new Sprite(model);
+            newFObj.Position = new Vector2f(fObj.X, fObj.Y);
+
+//            Console.WriteLine("GameObject sprites: " + GameObjects.Count);
+            GameObjects.Add(newFObj);
+            _controller.AddFallingObjectCollider(fObj, newFObj.GetGlobalBounds());
         }
         public void UpdateModelPosition(int x, int y)
         {
             CurrentPlayerModel.Position = new Vector2f(x, y);
+        }
+        public void UpdateFallingObjectPosition(int y)
+        {
+            Sprite s = null;
+            foreach (var item in GameObjects)
+            {
+                item.Position = new Vector2f(item.Position.X, item.Position.Y + y);
+                if (item.Position.Y>=GameWindow.Size.Y)
+                {
+                    s = item;
+                }
+            }
+            if (s!=null)
+            {
+                GameObjects.Remove(s);
+            }
+            
         }
     }
 }

@@ -16,7 +16,6 @@ namespace Lab4
             Y = y;
         }
         public FallingObject() : this(0, 0) { }
-
         public void SetPosition(int x, int y)
         {
             X = x;

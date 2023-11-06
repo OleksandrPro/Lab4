@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using static Lab4.UI;
 using static SFML.Window.Keyboard;
 
@@ -18,16 +19,22 @@ namespace Lab4
         Model _model;
 
         private Random _random;
+        private Timer _fallingObjectsTimer;
         private Player _player;
         private Level _currentLevel;
 
         private Dictionary<Keyboard.Key, DirectionCoeff> MovementMap;
         private const int UNIT_SIZE = 50;
-        private int _playerPrevX;
+        private const int VERTICAL_UNIT_SIZE = 250;
+        private const int HORIZONTAL_UNIT_SIZE = 10;
+        private int _objectsFallingSpeed = 2;
+        private const int OBJECT_DAMAGE = 1;
         private Stopwatch keyPressStopwatch = new Stopwatch();
-        private Keyboard.Key previousKey = Keyboard.Key.Unknown;
+        private Keyboard.Key _previousXAxisKey = Keyboard.Key.Unknown;
 
-
+        bool isAKeyPressed = false;
+        bool isDKeyPressed = false;
+        private bool _noXAxisKeyPressed = true;
         private struct DirectionCoeff
         {
             public int _x, _y;
@@ -42,23 +49,26 @@ namespace Lab4
         {
             _view = viev;
             _model = model;
-//            viev.GameWindow.KeyPressed += OnKeyPressed;
-//            viev.GameWindow.KeyReleased += OnKeyReleased;
+            viev.GameWindow.KeyPressed += OnKeyPressed;
+            viev.GameWindow.KeyReleased += OnKeyReleased;
+
 
             _random = new Random();
+            _fallingObjectsTimer = new Timer(1000);
+            _fallingObjectsTimer.Elapsed += SpawnFallingObject;
             MovementMap = new Dictionary<Keyboard.Key, DirectionCoeff>();
             FillMovementMap();
 
             _player = model.currentLevel.player;
             _currentLevel = model.currentLevel;
-            _playerPrevX = _player.X;
 
             _player.NewPosition += UpdatePlayerPos;
-            _player.NewPosition += UpdateColliderPosition;
+            _player.NewPosition += UpdatePlayerColliderPosition;
 
+            _fallingObjectsTimer.Enabled = true;
             keyPressStopwatch.Start();
         }
-        void OnKeyPressed(object sender, EventArgs e)
+        void onKeyPressed(object sender, EventArgs e)
         {
             KeyEventArgs kargs = (KeyEventArgs)e;
             bool successfullInput = false;
@@ -104,16 +114,106 @@ namespace Lab4
 
             //keyPressStopwatch.Restart();
         }
-
-        void OnKeyReleased(object sender, EventArgs e)
+        public void OnKeyPressed(object sender, EventArgs e)
         {
-            Console.WriteLine(((KeyEventArgs)e).Code);
+            if (((KeyEventArgs)e).Code == Keyboard.Key.A)
+            {
+                isAKeyPressed = true;                
+            }
+
+            if (((KeyEventArgs)e).Code == Keyboard.Key.D)
+            {
+                isDKeyPressed = true;                
+            }
+            _noXAxisKeyPressed = false;
+        }
+        public void OnKeyReleased(object sender, EventArgs e)
+        {
+            if (((KeyEventArgs)e).Code == Keyboard.Key.A)
+            {
+                isAKeyPressed = false;
+            }
+
+            if (((KeyEventArgs)e).Code == Keyboard.Key.D)
+            {
+                isDKeyPressed = false;
+            }
+        }
+        public void MovementHandler()
+        {
+            if (!isAKeyPressed && !isDKeyPressed)
+            {
+                _noXAxisKeyPressed = true;
+            }            
+            if (_noXAxisKeyPressed || (isAKeyPressed && isDKeyPressed))
+            {
+                _player.BackToIdle();
+            }
+            else if (isAKeyPressed)
+            {
+                MovePlayer(-HORIZONTAL_UNIT_SIZE, 0);
+                if (_previousXAxisKey == Keyboard.Key.Unknown)
+                {
+                    _player.BackToMoving();
+                }
+                else
+                {
+                    if (_previousXAxisKey == Keyboard.Key.A)
+                    {
+                        if (_player.StateType != typeof(MovingLeft) && _player.StateType != typeof(MovingRight))
+                        {
+                            _player.BackToMoving();
+                        }
+                    }
+                    else
+                    {
+                        if (_player.StateType != typeof(MovingLeft) && _player.StateType != typeof(MovingRight))
+                        {
+                            _player.GoToOppositeMovingDirection();
+                        }
+                    }
+                }
+                
+                _previousXAxisKey = Keyboard.Key.A;
+            }
+            else if (isDKeyPressed)
+            {
+                MovePlayer(HORIZONTAL_UNIT_SIZE, 0);
+                if (_previousXAxisKey == Keyboard.Key.Unknown)
+                {
+                    _player.BackToMoving();
+                }
+                else
+                {
+                    if (_previousXAxisKey == Keyboard.Key.D)
+                    {
+                        if (_player.StateType != typeof(MovingLeft) && _player.StateType != typeof(MovingRight))
+                        {
+                            _player.BackToMoving();
+                        }
+                    }
+                    else
+                    {
+                        if (_player.StateType != typeof(MovingLeft) && _player.StateType != typeof(MovingRight))
+                        {
+                            _player.GoToOppositeMovingDirection();
+                        }
+                    }
+                }                
+                _previousXAxisKey = Keyboard.Key.D;
+            }
+        }
+        private void SpawnFallingObject(Object source, ElapsedEventArgs e)
+        {
+            int randomObjPos = _random.Next(0, 1200);
+            FallingObject fObj = _model.SpawnFallingObject(randomObjPos, 0);
+            _view.AddFallingObject(fObj);
         }
         private bool TimeCondition(TimeSpan timeSinceLastKeyPress)
         {
             return timeSinceLastKeyPress.Milliseconds < 1000;
         }
-        private bool XAxisKeyCondition(KeyEventArgs kargs)
+        private bool IsInputFromXAxisKeys(KeyEventArgs kargs)
         {
             return kargs.Code == Keyboard.Key.D || kargs.Code == Keyboard.Key.A;
         }
@@ -142,10 +242,15 @@ namespace Lab4
             ChangePositionEventArgs changepos = (ChangePositionEventArgs)e;
             _view.UpdateModelPosition(changepos.X, changepos.Y);
         }
-        void UpdateColliderPosition(object sender, EventArgs e)
+        void UpdatePlayerColliderPosition(object sender, EventArgs e)
         {
             Player player = (Player)sender;
             player.Collider = GetColiderOfModel();
+        }
+        void UpdateGameObjectColliderPosition(object sender, EventArgs e)
+        {
+            GameObject obj = (GameObject)sender;
+            Engine.InitCollider(obj.Collider, obj.Collider.Left + _objectsFallingSpeed, obj.Collider.Top + _objectsFallingSpeed, obj.Collider.Height, obj.Collider.Width);
         }
         public FloatRect GetColiderOfModel()
         {
@@ -172,14 +277,16 @@ namespace Lab4
                 return;
             }
             _player.Move(x, y);
-            if (_player.StateType != typeof(IdleLeft) && _player.X < previousX) 
-            {
-                _player.ChangeState<IdleLeft>();
-            }
-            else if(_player.StateType != typeof(IdleRight) && _player.X > previousX) 
-            {
-                _player.ChangeState<IdleRight>();
-            }
+
+            //if (_player.StateType != typeof(IdleLeft) && _player.X < previousX) 
+            //{
+            //    _player.ChangeState<IdleLeft>();
+            //}
+            //else if(_player.StateType != typeof(IdleRight) && _player.X > previousX) 
+            //{
+            //    _player.ChangeState<IdleRight>();
+            //}
+
             Console.WriteLine($"Move player: x = {_player.X}, y = {_player.Y}");
         }
 
@@ -204,8 +311,31 @@ namespace Lab4
                 {
                     return true;
                 }
-            }
+            }            
             return false;
+        }
+        public void CheckAllGameObjectsCollision()
+        {
+            FallingObject toDestroy = null;
+            foreach (var item in _model.SpawnedObjects)
+            {
+                bool willCollide = Engine.isIntersect(_player.Collider, item.Collider);
+                if (willCollide)
+                {
+                    _player.Health -= OBJECT_DAMAGE;
+                    toDestroy = item;
+                    Console.WriteLine("Player health: "+_player.Health);
+                    //Console.WriteLine("------------------");
+                    //Console.WriteLine();
+                    //Console.WriteLine("-10 HP");
+                    //Console.WriteLine();
+                    //Console.WriteLine("------------------");
+                }
+            }
+            if (toDestroy != null)
+            {
+                _model.DespawnFallingObject(toDestroy);
+            }
         }
         public void RenderLevel()
         {
@@ -215,29 +345,44 @@ namespace Lab4
         {
             p.Collider = collider;
         }
+        public void AddBarrier(int x, int y, int height, int width)
+        {
+            _currentLevel.barrier.Add(new FloatRect(x, y, height, width));
+        }
+        public void AddFallingObjectCollider(FallingObject fObj, FloatRect collider)
+        {
+            fObj.Collider = collider;
+        }
+         
         public void Update()
         {
-            //bool newStanding;
-            //if (_playerPrevX != _player.X)
+            //if (_playerPrevX != _player.X && _player.StateType != typeof(MovingLeft) && _player.StateType != typeof(MovingRight))
             //{
-            //    newStanding = false;
+            //    _player.BackToMoving();
             //}
-            //else
+            //else if (_playerPrevX == _player.X && _player.StateType != typeof(IdleLeft) && _player.StateType != typeof(IdleRight))
             //{
-            //    newStanding = true;
+            //    _player.BackToIdle();
             //}
-            //_player.Update(newStanding);
             //_playerPrevX = _player.X;
-//            bool newStanding;
-            if (_playerPrevX != _player.X && _player.StateType != typeof(MovingLeft) && _player.StateType != typeof(MovingRight))
+            CheckAllGameObjectsCollision();
+            
+            FallingObject toDestroy = null;
+            foreach (var item in _model.SpawnedObjects)
             {
-                _player.BackToMoving();
+                
+                item.IncreaseVerticalSpeed(_objectsFallingSpeed);
+                if(item.Y >=_view.GameWindow.Size.Y)
+                {
+                    toDestroy = item;
+                    
+                }                
             }
-            else if (_playerPrevX == _player.X && _player.StateType != typeof(IdleLeft) && _player.StateType != typeof(IdleRight))
+            if(toDestroy != null)
             {
-                _player.BackToIdle();
-            }
-            _playerPrevX = _player.X;
+                _model.DespawnFallingObject(toDestroy);
+            }            
+            _view.UpdateFallingObjectPosition(_objectsFallingSpeed);
         }
     }
 }

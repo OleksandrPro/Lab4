@@ -17,14 +17,9 @@ namespace Lab4
         {
             Console.WriteLine("player is in IdleLeft state");
         }
-
         public override void Exit()
         {
             Console.WriteLine("player exits IdleLeft state");
-        }
-        public override void Move()
-        {
-            _playerStateMachine.EnterIn<MovingLeft>();
         }
         public override void BackToMoving()
         {
@@ -33,6 +28,10 @@ namespace Lab4
         public override void BackToIdle()
         {
 
+        }
+        public override void GoToOppositeMovingDirection()
+        {
+            _playerStateMachine.EnterIn<MovingRight>();
         }
     }
 }

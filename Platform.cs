@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace Lab4
 {
-    public class Platform
+    public class Platform : GameObject
     {
-        public uint X {  get; set; }
-        public uint Y { get; set; }
-        public uint Height { get; set; }
-        public uint Width { get; set; }
-        public FloatRect Collider { get; set; }
-        public Platform(uint x, uint y, uint height, uint width)
+        public int X {  get; set; }
+        public int Y { get; set; }
+        public int Height { get; set; }
+        public int Width { get; set; }
+//        public FloatRect Collider { get; set; }
+        public Platform(int x, int y, int height, int width)
         {
             X = x;
             Y = y;
