@@ -94,6 +94,11 @@ namespace Lab4
             FallingObjects.Add(newFObjSprite);
             _controller.AddFallingObjectCollider(fObj, newFObjSprite.GetGlobalBounds());
         }
+        public void RemoveFallingObjectSprite(int x, int y)
+        {
+            Sprite toRemove = FallingObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
+            FallingObjects.Remove(toRemove);
+        }
         public void UpdateModelPosition(int x, int y)
         {
             CurrentPlayerModel.Position = new Vector2f(x, y);

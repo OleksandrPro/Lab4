@@ -35,16 +35,17 @@ namespace Lab4
             newFObj.SetActive(true);
             SpawnedObjects.Add(newFObj);
 
-            Console.WriteLine("Spawned objects: " + SpawnedObjects.Count);
+//            Console.WriteLine("Spawned objects: " + SpawnedObjects.Count);
             return newFObj;
         }
         public void DespawnFallingObject(FallingObject obj)
         {
 //            Console.WriteLine("Despawning FallingObject");
-            SpawnedObjects.Remove(obj);
+            FallingObject toRemove = SpawnedObjects.FirstOrDefault(remove => remove.X == obj.X && remove.Y == obj.Y);
+            SpawnedObjects.Remove(toRemove);
             obj.SetPosition(0, 0);            
-            _fallingObjects.Release(obj);
-            Console.WriteLine("Spawned objects: " + SpawnedObjects.Count);
+            _fallingObjects.Release(toRemove);
+//            Console.WriteLine("Spawned objects: " + SpawnedObjects.Count);
         }
         void SetLevel(Level level) 
         {

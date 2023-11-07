@@ -55,7 +55,7 @@ namespace Lab4
             view.GameWindow.KeyPressed += OnKeyPressedVertical;
 
             _random = new Random();
-            _fallingObjectsTimer = new Timer(5000);
+            _fallingObjectsTimer = new Timer(1000);
             _fallingObjectsTimer.Elapsed += SpawnFallingObject;
 
             _player = model.currentLevel.player;
@@ -242,7 +242,11 @@ namespace Lab4
             }
             if (toDestroy != null)
             {
+//                Console.WriteLine($"to destroy: x = {toDestroy.X},  y = {toDestroy.Y}");
+                int x = toDestroy.X;
+                int y = toDestroy.Y;
                 _model.DespawnFallingObject(toDestroy);
+                _view.RemoveFallingObjectSprite(x, y);
             }
         }
         public void RenderLevel()
@@ -282,9 +286,10 @@ namespace Lab4
             }
             if (toDestroy != null)
             {
-                _model.DespawnFallingObject(toDestroy);
+                _model.DespawnFallingObject(toDestroy);                
             }
             _view.UpdateFallingObjectPosition(_objectsFallingSpeed);
+//            Console.WriteLine(_model.SpawnedObjects.Count);
         }
     }
 }
