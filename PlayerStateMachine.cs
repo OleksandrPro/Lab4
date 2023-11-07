@@ -32,7 +32,7 @@ namespace Lab4
 //                _currentState?.Exit();
                 _currentState = state;
                 State = state.GetType();
-//                _currentState?.Enter();
+                _currentState?.Enter();
                 NewState?.Invoke(this, new EventArgs());
             }
         } 

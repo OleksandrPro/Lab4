@@ -13,12 +13,27 @@ namespace Lab4
     {
         private int _x;
         private int _y;
+        private PlayerState _currentState;
         public int Height { get; set; }
         public int Width { get; set; }
         public int Health { get; set; }
         public FloatRect Collider { get; set; }
         private PlayerStateMachine _states;
-        public PlayerState CurrentState { get; set; }
+        public PlayerState CurrentState
+        {
+            get
+            {
+                return _currentState;
+            }
+            set
+            {
+                if (_currentState != value)
+                {
+                    _currentState = value;
+                    StateChanged?.Invoke(this, new EventArgs());
+                }
+            }
+        }
         public Type StateType { get; private set; }
         public int X 
         {  
@@ -51,7 +66,9 @@ namespace Lab4
             }
         }
         public delegate void PositionChanged(object sender, EventArgs e);
-        public event PositionChanged NewPosition;        
+        public event PositionChanged NewPosition;
+        public delegate void StateChange(object sender, EventArgs e);
+        public event StateChange StateChanged;
         public Player(int x, int y, int width, int height, int health)
         {
             X = x;

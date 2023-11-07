@@ -8,8 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
-using static Lab4.UI;
-using static SFML.Window.Keyboard;
 
 namespace Lab4
 {
@@ -33,18 +31,7 @@ namespace Lab4
 
         bool isAKeyPressed = false;
         bool isDKeyPressed = false;
-        bool isWKeyPressed = false;
-        bool isSKeyPressed = false;
         private bool _noXAxisKeyPressed = true;
-        private struct DirectionCoeff
-        {
-            public int _x, _y;
-            public DirectionCoeff(int x, int y)
-            {
-                _x = x;
-                _y = y;
-            }
-        }
 
         public Controller(View view, Model model)
         {
@@ -63,6 +50,7 @@ namespace Lab4
 
             _player.NewPosition += UpdatePlayerPos;
             _player.NewPosition += UpdatePlayerColliderPosition;
+            _player.StateChanged += UpdateAnimation;
 
             _fallingObjectsTimer.Enabled = true;
             keyPressStopwatch.Start();
@@ -103,6 +91,7 @@ namespace Lab4
         }
         public void MovementHandler()
         {
+            //engine
             if (!isAKeyPressed && !isDKeyPressed)
             {
                 _noXAxisKeyPressed = true;
@@ -167,19 +156,26 @@ namespace Lab4
         }
         private void SpawnFallingObject(Object source, ElapsedEventArgs e)
         {
+            //engine or model
             int randomObjPos = _random.Next(0, 1200);
             FallingObject fObj = _model.SpawnFallingObject(randomObjPos, 0);
             _view.AddFallingObject(fObj);
         }
         void UpdatePlayerPos(object sender, EventArgs e)
         {
+            //engine
             ChangePositionEventArgs changepos = (ChangePositionEventArgs)e;
             _view.UpdateModelPosition(changepos.X, changepos.Y);
         }
         void UpdatePlayerColliderPosition(object sender, EventArgs e)
         {
+            //properties
             Player player = (Player)sender;
             player.Collider = GetColiderOfModel();
+        }
+        void UpdateAnimation(object sender, EventArgs e)
+        {
+            _view.UpdateAnimation(_player);
         }
         public FloatRect GetColiderOfModel()
         {

@@ -23,6 +23,7 @@ namespace Lab4
         private LinkedListNode<T> _head;
         private LinkedListNode<T> _tail;
         private LinkedListNode<T> _current;
+        private LinkedListNode<T> _firstAdded;
         private int _count;
 
         public int Count
@@ -34,6 +35,7 @@ namespace Lab4
             _head = null;
             _tail = null;
             _current = null;
+            _firstAdded = null;
             _count = 0;
         }
         public void Add(T data)
@@ -44,6 +46,7 @@ namespace Lab4
                 newNode.Next = newNode;
                 _head = newNode;
                 _tail = newNode;
+                _firstAdded = newNode;
             }
             else
             {
@@ -77,6 +80,10 @@ namespace Lab4
         {
             MoveToNext();
             return GetCurrent();            
+        }
+        public void Reset()
+        {
+            _current = _firstAdded;
         }
     }
 }

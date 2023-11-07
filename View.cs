@@ -3,6 +3,7 @@ using SFML.System;
 using SFML.Window;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace Lab4
 {
     public class View
     {
-        public RenderWindow GameWindow { get; set; }
+        public RenderWindow GameWindow { get; private set; }
         private Controller _controller;
 
         public Sprite CurrentPlayerModel;
@@ -19,17 +20,46 @@ namespace Lab4
 
         private List<Sprite> FallingObjects;
 
-        private LinkedList<Sprite> _idleAnimationData;
+        private LinkedList<Sprite> _currentAnimation;
+        private LinkedList<Sprite> _idleRightAnimation;
+        private LinkedList<Sprite> _idleLeftAnimation;
+        private LinkedList<Sprite> _movingRightAnimation;
+        private LinkedList<Sprite> _movingLeftAnimation;
+        private Dictionary<Type, LinkedList<Sprite>> _stateAnimationPairs;
 
         private string _folderPathNumbers = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\numbers";
         private string _folderPathSingleSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\newPlaceholder.png";
         private string _folderPathFireBallSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\fireball2.png";
+
+        private string _folderPathIdleRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\IdleRight";
+        private string _folderPathIdleLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\IdleLeft";
+        private string _folderPathMovingRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\MovingRight";
+        private string _folderPathMovingLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\MovingLeft";
+
         public View(RenderWindow window)
         {
             GameWindow = window;
 
             Platforms = new List<RectangleShape>();
             FallingObjects = new List<Sprite>();
+
+            _idleRightAnimation = new LinkedList<Sprite>();
+            _idleLeftAnimation = new LinkedList<Sprite>();
+            _movingRightAnimation = new LinkedList<Sprite>();
+            _movingLeftAnimation = new LinkedList<Sprite>();
+
+            FillAnimationList(_idleRightAnimation, _folderPathIdleRight);
+            FillAnimationList(_idleLeftAnimation, _folderPathIdleLeft);
+            FillAnimationList(_movingRightAnimation, _folderPathMovingRight);
+            FillAnimationList(_movingLeftAnimation, _folderPathMovingLeft);
+
+            _stateAnimationPairs = new Dictionary<Type, LinkedList<Sprite>>()
+            {
+                [typeof(IdleRight)] = _idleRightAnimation,
+                [typeof(IdleLeft)] = _idleLeftAnimation,
+                [typeof(MovingRight)] = _movingRightAnimation,
+                [typeof(MovingLeft)] = _movingLeftAnimation
+            };
         }
         public void AddController(Controller controller)
         {
@@ -48,7 +78,7 @@ namespace Lab4
             {
                 GameWindow.Draw(g);
             }
-
+            PlayPlayerAnimation();
             GameWindow.Display();
         }
         public void LoadLevel(Level level) 
@@ -70,10 +100,41 @@ namespace Lab4
         }
         private void AddPlayerModel(Player player)
         {
-            Texture model = new Texture(_folderPathSingleSprite);
-            CurrentPlayerModel = new Sprite(model);
+            _stateAnimationPairs.TryGetValue(player.CurrentState.GetType(), out _currentAnimation);
+            CurrentPlayerModel = _currentAnimation.GetCurrent();
             CurrentPlayerModel.Position = new Vector2f(player.X, player.Y);
             _controller.AddPlayerCollider();
+        }
+        public void PlayPlayerAnimation()
+        {
+            Vector2f currentPos = CurrentPlayerModel.Position;
+            CurrentPlayerModel = _currentAnimation.GetNext();
+            CurrentPlayerModel.Position = currentPos;
+        }
+        public void UpdateAnimation(Player p)
+        {
+            Vector2f currentPos = CurrentPlayerModel.Position;
+            _currentAnimation.Reset();
+            _stateAnimationPairs.TryGetValue(p.CurrentState.GetType(), out _currentAnimation);
+            CurrentPlayerModel = _currentAnimation.GetCurrent();
+            CurrentPlayerModel.Position = currentPos;
+        }
+        private void FillAnimationList(LinkedList<Sprite> list, string path)
+        {
+            if (Directory.Exists(path))
+            {
+                string[] imageFiles = Directory.GetFiles(path, "*.png");
+                foreach (string imagePath in imageFiles)
+                {
+                    Texture texture = new Texture(imagePath);
+                    Sprite newSprite = new Sprite(texture);
+                    list.Add(newSprite);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Folder doesn't exist");
+            }
         }
         private void SetBarrier(Level level)
         {
