@@ -16,6 +16,9 @@ namespace Lab4
         private ObjectPool<HealingItem> _healingItems;
         public List<FallingObject> SpawnedObjects;
 
+        public const int HORIZONTAL_UNIT_SIZE = 10;
+        public const int VERTICAL_UNIT_SIZE = 250;
+
         public Model()
         {
             currentLevel = new Level1();

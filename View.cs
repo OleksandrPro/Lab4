@@ -27,14 +27,21 @@ namespace Lab4
         private LinkedList<Sprite> _movingLeftAnimation;
         private Dictionary<Type, LinkedList<Sprite>> _stateAnimationPairs;
 
-        private string _folderPathNumbers = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\numbers";
         private string _folderPathSingleSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\newPlaceholder.png";
         private string _folderPathFireBallSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\fireball2.png";
 
-        private string _folderPathIdleRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\IdleRight";
-        private string _folderPathIdleLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\IdleLeft";
-        private string _folderPathMovingRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\MovingRight";
-        private string _folderPathMovingLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\MovingLeft";
+        //private string _folderPathIdleRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\IdleRight";
+        //private string _folderPathIdleLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\IdleLeft";
+        //private string _folderPathMovingRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\MovingRight";
+        //private string _folderPathMovingLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\MovingLeft";
+
+        private string _folderPathIdleRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\Luffy\\IdleRight";
+        private string _folderPathIdleLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\Luffy\\IdleLeft";
+        private string _folderPathMovingRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\Luffy\\MovingRight";
+        private string _folderPathMovingLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\Luffy\\MovingLeft";
+
+        private const int ANIMATION_TIMER = 30;
+        private int _animationTick = ANIMATION_TIMER;
 
         public View(RenderWindow window)
         {
@@ -67,7 +74,7 @@ namespace Lab4
         }
         public void DrawScene()
         {
-            GameWindow.Clear(new Color(Color.White));
+            GameWindow.Clear(new Color(Color.Black));
 
             GameWindow.Draw(CurrentPlayerModel);
             foreach (var p in Platforms)
@@ -107,8 +114,14 @@ namespace Lab4
         }
         public void PlayPlayerAnimation()
         {
+            --_animationTick;
             Vector2f currentPos = CurrentPlayerModel.Position;
-            CurrentPlayerModel = _currentAnimation.GetNext();
+            if (_animationTick==0)
+            {
+                CurrentPlayerModel = _currentAnimation.GetNext();
+                _animationTick = ANIMATION_TIMER;
+            }
+            
             CurrentPlayerModel.Position = currentPos;
         }
         public void UpdateAnimation(Player p)
@@ -124,6 +137,7 @@ namespace Lab4
             if (Directory.Exists(path))
             {
                 string[] imageFiles = Directory.GetFiles(path, "*.png");
+                Array.Sort(imageFiles);
                 foreach (string imagePath in imageFiles)
                 {
                     Texture texture = new Texture(imagePath);

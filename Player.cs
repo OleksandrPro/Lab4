@@ -14,6 +14,7 @@ namespace Lab4
         private int _x;
         private int _y;
         private PlayerState _currentState;
+        private PlayerState _previousState;
         public int Height { get; set; }
         public int Width { get; set; }
         public int Health { get; set; }
@@ -29,9 +30,21 @@ namespace Lab4
             {
                 if (_currentState != value)
                 {
+                    _previousState = _currentState;
                     _currentState = value;
                     StateChanged?.Invoke(this, new EventArgs());
                 }
+            }
+        }
+        public PlayerState PreviousState 
+        { 
+            get
+            {
+                return _previousState;
+            }
+            set
+            {
+                _previousState = value;
             }
         }
         public Type StateType { get; private set; }
@@ -68,7 +81,7 @@ namespace Lab4
         public delegate void PositionChanged(object sender, EventArgs e);
         public event PositionChanged NewPosition;
         public delegate void StateChange(object sender, EventArgs e);
-        public event StateChange StateChanged;
+        public event StateChange StateChanged;        
         public Player(int x, int y, int width, int height, int health)
         {
             X = x;
@@ -76,21 +89,18 @@ namespace Lab4
             Height = height;
             Width = width;
             Health = health;
-            _states = new PlayerStateMachine();
-            _states.EnterIn<IdleRight>();
-            CurrentState = _states._currentState;
-            StateType = _states.State;
+
+            _states = new PlayerStateMachine(this);
+            
             _states.NewState += NewStateHandler;
+            _states.EnterIn<IdleRight>();
         }
         public Player(int x, int y, int width, int height) : this(x, y, width, height, 3) { }
-        
         public void ChangeState<TypeOfState>() where TypeOfState : PlayerState
         {
             if (typeof(TypeOfState) != StateType)
             {
                 _states.EnterIn<TypeOfState>();
-                CurrentState = _states._currentState;
-                StateType = _states.State;
             }            
         }
         public void NewStateHandler(object sender, EventArgs e)
@@ -99,9 +109,12 @@ namespace Lab4
             CurrentState = state._currentState;
             StateType = state.State;
         }
-        public void Move(int x, int y)
+        public void MoveHorizontal()
         {
-            X += x;
+            CurrentState.Move();
+        }
+        public void MoveVertical(int y)
+        {
             Y += y;
         }
         public void BackToIdle()
@@ -113,7 +126,7 @@ namespace Lab4
         }
         public void BackToMoving()
         {
-            if (StateType != typeof(MovingLeft) || StateType != typeof(MovingRight)) 
+            if (StateType != typeof(MovingLeft) ||   StateType != typeof(MovingRight)) 
             {
                 CurrentState.BackToMoving();
             }            

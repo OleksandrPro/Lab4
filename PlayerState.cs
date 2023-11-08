@@ -8,8 +8,11 @@ namespace Lab4
 {
     public abstract class PlayerState
     {
+        public abstract int MovementCoeffcientX { get; }
+        
         public abstract void Enter();
         public abstract void Exit();
+        public abstract void Move();
         public abstract void BackToMoving();
         public abstract void BackToIdle();
         public abstract void GoToOppositeMovingDirection();

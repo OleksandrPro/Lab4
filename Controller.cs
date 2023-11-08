@@ -21,9 +21,6 @@ namespace Lab4
         private Player _player;
         private Level _currentLevel;
 
-        private const int UNIT_SIZE = 50;
-        private const int VERTICAL_UNIT_SIZE = 250;
-        private const int HORIZONTAL_UNIT_SIZE = 10;
         private int _objectsFallingSpeed = 2;
         private const int OBJECT_DAMAGE = 1;
         private Stopwatch keyPressStopwatch = new Stopwatch();
@@ -31,7 +28,7 @@ namespace Lab4
 
         bool isAKeyPressed = false;
         bool isDKeyPressed = false;
-        private bool _noXAxisKeyPressed = true;
+        private readonly object keyLock = new object();
 
         public Controller(View view, Model model)
         {
@@ -57,102 +54,72 @@ namespace Lab4
         }
         public void OnKeyPressedHorizontal(object sender, EventArgs e)
         {
-            if (((KeyEventArgs)e).Code == Keyboard.Key.A)
+            lock (keyLock)
             {
-                isAKeyPressed = true;                
+                if (((KeyEventArgs)e).Code == Keyboard.Key.A)
+                {
+                    isAKeyPressed = true;
+                }
+                if (((KeyEventArgs)e).Code == Keyboard.Key.D)
+                {
+                    isDKeyPressed = true;
+                }
             }
-            if (((KeyEventArgs)e).Code == Keyboard.Key.D)
-            {
-                isDKeyPressed = true;                
-            }
-            _noXAxisKeyPressed = false;
         }
         public void OnKeyReleasedHorizontal(object sender, EventArgs e)
         {
-            if (((KeyEventArgs)e).Code == Keyboard.Key.A)
+            lock (keyLock)
             {
-                isAKeyPressed = false;
-            }
-            if (((KeyEventArgs)e).Code == Keyboard.Key.D)
-            {
-                isDKeyPressed = false;
+                if (((KeyEventArgs)e).Code == Keyboard.Key.A)
+                {
+                    isAKeyPressed = false;
+                }
+                if (((KeyEventArgs)e).Code == Keyboard.Key.D)
+                {
+                    isDKeyPressed = false;
+                }
             }
         }
         public void OnKeyPressedVertical(object sender, EventArgs e)
         {
+            int movementCoeff = 0;
             if (((KeyEventArgs)e).Code == Keyboard.Key.W)
             {
-                MovePlayer(0, -VERTICAL_UNIT_SIZE);
+                movementCoeff = -1;
             }
             if (((KeyEventArgs)e).Code == Keyboard.Key.S)
             {
-                MovePlayer(0, VERTICAL_UNIT_SIZE);
+                movementCoeff = 1;
             }
+            MovePlayerVertical(Model.VERTICAL_UNIT_SIZE * movementCoeff);
         }
         public void MovementHandler()
         {
             //engine
             if (!isAKeyPressed && !isDKeyPressed)
             {
-                _noXAxisKeyPressed = true;
+                if (_player.CurrentState is MovingLeft)
+                {
+                    _player.ChangeState<IdleLeft>();
+                }
+                else if (_player.CurrentState is MovingRight)
+                {
+                    _player.ChangeState<IdleRight>();
+                }
             }
-            if (_noXAxisKeyPressed || (isAKeyPressed && isDKeyPressed))
+            else if (isAKeyPressed && isDKeyPressed)
             {
                 _player.BackToIdle();
             }
             else if (isAKeyPressed)
             {
-                MovePlayer(-HORIZONTAL_UNIT_SIZE, 0);
-                if (_previousXAxisKey == Keyboard.Key.Unknown)
-                {
-                    _player.BackToMoving();
-                }
-                else
-                {
-                    if (_previousXAxisKey == Keyboard.Key.A)
-                    {
-                        if (_player.StateType != typeof(MovingLeft) && _player.StateType != typeof(MovingRight))
-                        {
-                            _player.BackToMoving();
-                        }
-                    }
-                    else
-                    {
-                        if (_player.StateType != typeof(MovingLeft) && _player.StateType != typeof(MovingRight))
-                        {
-                            _player.GoToOppositeMovingDirection();
-                        }
-                    }
-                }
-                
-                _previousXAxisKey = Keyboard.Key.A;
+                _player.ChangeState<MovingLeft>();
             }
             else if (isDKeyPressed)
             {
-                MovePlayer(HORIZONTAL_UNIT_SIZE, 0);
-                if (_previousXAxisKey == Keyboard.Key.Unknown)
-                {
-                    _player.BackToMoving();
-                }
-                else
-                {
-                    if (_previousXAxisKey == Keyboard.Key.D)
-                    {
-                        if (_player.StateType != typeof(MovingLeft) && _player.StateType != typeof(MovingRight))
-                        {
-                            _player.BackToMoving();
-                        }
-                    }
-                    else
-                    {
-                        if (_player.StateType != typeof(MovingLeft) && _player.StateType != typeof(MovingRight))
-                        {
-                            _player.GoToOppositeMovingDirection();
-                        }
-                    }
-                }                
-                _previousXAxisKey = Keyboard.Key.D;
-            }            
+                _player.ChangeState<MovingRight>();
+            }
+            MovePlayerHorizontal();
         }
         private void SpawnFallingObject(Object source, ElapsedEventArgs e)
         {
@@ -181,27 +148,41 @@ namespace Lab4
         {
             return _view.CurrentPlayerModel.GetGlobalBounds();
         }
-        public void MovePlayer(int x, int y)
+        public void MovePlayerHorizontal()
         {
-            bool possibleCollision = PreUpdate(_player, x, y);
+            bool possibleCollision = PreUpdateX(_player);
             if (possibleCollision)
             {
                 return;
             }
-            _player.Move(x, y);
-
-//            Console.WriteLine($"Move player: x = {_player.X}, y = {_player.Y}");
+            _player.MoveHorizontal();
         }
-
-        public bool PreUpdate(Player p, int updateX, int updateY)
+        public void MovePlayerVertical(int y)
+        {
+            bool possibleCollision = PreUpdateY(_player, y);
+            if (possibleCollision)
+            {
+                return;
+            }
+            _player.MoveVertical(y);
+        }
+        public bool PreUpdateX(Player p)
         {
             FloatRect newCollider = p.Collider;
-            newCollider.Left += updateX;
-            newCollider.Top += updateY;
-
+            newCollider.Left += p.CurrentState.MovementCoeffcientX * Model.HORIZONTAL_UNIT_SIZE;
+            return CheckPlayerPossibleCollision(newCollider);
+        }
+        public bool PreUpdateY(Player p, int posChange)
+        {
+            FloatRect newCollider = p.Collider;
+            newCollider.Top += posChange;
+            return CheckPlayerPossibleCollision(newCollider);
+        }
+        public bool CheckPlayerPossibleCollision(FloatRect playerCollider)
+        {
             foreach (var item in _currentLevel.platforms)
             {
-                bool willCollide = Engine.isIntersect(newCollider, item.Collider);
+                bool willCollide = Engine.isIntersect(playerCollider, item.Collider);
                 if (willCollide)
                 {
                     return true;
@@ -209,12 +190,12 @@ namespace Lab4
             }
             foreach (var item in _currentLevel.barrier)
             {
-                bool willCollide = Engine.isIntersect(item, newCollider);
+                bool willCollide = Engine.isIntersect(item, playerCollider);
                 if (willCollide)
                 {
                     return true;
                 }
-            }            
+            }
             return false;
         }
         public void CheckAllGameObjectsCollision()

@@ -8,6 +8,8 @@ namespace Lab4
 {
     internal class MovingRight : PlayerState
     {
+        private int _movementCoeffcientX = 1;
+        public override int MovementCoeffcientX { get { return _movementCoeffcientX; } }
         private readonly PlayerStateMachine _playerStateMachine;
         public MovingRight(PlayerStateMachine psm)
         {
@@ -20,6 +22,10 @@ namespace Lab4
         public override void Exit()
         {
             Console.WriteLine("player exits MovingRight state");
+        }
+        public override void Move()
+        {
+            _playerStateMachine.player.X += Model.HORIZONTAL_UNIT_SIZE * _movementCoeffcientX;
         }
         public override void BackToMoving()
         {
