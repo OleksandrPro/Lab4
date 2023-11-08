@@ -62,10 +62,5 @@ namespace Lab4
         {
             Collider = Engine.ChangeColliderPosition(Collider, X, Y);
         }
-        public void Print()
-        {
-            Console.WriteLine($"obj pos: x = {X}, y = {Y}");
-            Console.WriteLine($"colider pos: x = {Collider.Left}, y = {Collider.Top}");
-        }
     }
 }

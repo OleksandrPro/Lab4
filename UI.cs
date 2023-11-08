@@ -8,121 +8,88 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace Lab4
 {
     public class UI
     {
-        public Window MainWindow { get; set; }
-        public Sprite CurrentPlayerModel { get; set; }
-        private Controller _controller;
-        public List<RectangleShape> Platforms { get; set; }
-        private LinkedList<Sprite> _idleAnimationData;
-        private string _folderPath = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\testImg";
-        private string _folderPathNumbers = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\numbers";
-        public UI(Window window) 
-        { 
-            Platforms = new List<RectangleShape>();
-            MainWindow = window;
-        }
-        public void AddController(Controller controller)
+        private RenderWindow _window;
+        private Font _font;
+        private const string _folderFontPath = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\font\\FFFFORWA.ttf";
+        private const string _folderHPPath = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\heart.png";
+        private Text _health;
+        private Text _score;
+        private RectangleShape _bar;
+        public const int TEXT_SIZE = 50;
+        private Sprite _HPIcon;
+
+        public const int BAR_HEIGHT = 100;
+        public const int BAR_WIDTH = 1300;
+        private const bool NEED_BAR = false;
+        public UI(RenderWindow window)
         {
-            _controller = controller;
+            _window = window;
+            _font = new Font(_folderFontPath);
+            _health = new Text();
+            SetText(_health, Model.PLAYER_START_HEALTH.ToString());
+            SetTextDefaultSettings(_health);
+            _health.Position = new Vector2f(2 * TEXT_SIZE, window.Size.Y - TEXT_SIZE);
+            _score = new Text();
+            SetText(_score, "Score : 0");
+            SetTextDefaultSettings(_score);
+            _score.Position = new Vector2f(window.Size.X / 2, window.Size.Y - TEXT_SIZE);
+            if (NEED_BAR)
+                AddBar();
+            AddHPIcon();
         }
-        public void AddPlayerModel(Player player)
+        public void Draw()
         {
-            Texture model = new Texture("D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\newPlaceholder.png");
-            //            Texture model = new Texture("Lab4\\sprites\\placeholder.png");
-            CurrentPlayerModel = new Sprite(model);
-            CurrentPlayerModel.Position = new Vector2f(player.X, player.Y);
+            if (NEED_BAR)
+                _window.Draw(_bar);
+            _window.Draw(_health);
+            _window.Draw(_HPIcon);
+            _window.Draw(_score);
         }
-        public void AddIdlePlayerModel(Player player)
+        private void AddBar()
         {
-            _idleAnimationData = new LinkedList<Sprite>();
-            AddSprites(player, _idleAnimationData, _folderPathNumbers);
+            _bar = new RectangleShape(new Vector2f(BAR_WIDTH, BAR_HEIGHT));
+            _bar.Position = new Vector2f(0, _window.Size.Y - BAR_HEIGHT);
+            _bar.FillColor = Color.Red;
         }
-        void AddSprites(Player player, LinkedList<Sprite> sprites, string path)
-        {           
-            if (Directory.Exists(path))
-            {
-                string[] imageFiles = Directory.GetFiles(path, "*.png");
-                foreach (string imagePath in imageFiles)
-                {
-                    Texture texture = new Texture(imagePath);
-                    Sprite newSprite = new Sprite(texture);
-                    newSprite.Position = new Vector2f(player.X, player.Y);
-                    sprites.Add(newSprite);
-                }
-            }
-            else
-            {
-                Console.WriteLine("Folder doesn't exist");
-            }
-            CurrentPlayerModel = _idleAnimationData.GetCurrent();
-            CurrentPlayerModel.Position = new Vector2f(player.X, player.Y);
-        }
-        public void AddPlatforms(Level level)
-        {   
-            foreach (var p in level.platforms)
-            {
-                RectangleShape newPlatform = new RectangleShape(new Vector2f(p.Height, p.Width));
-                newPlatform.Position = new Vector2f(p.X, p.Y);
-                newPlatform.FillColor = Color.Cyan;
-                Platforms.Add(newPlatform);
-//                _controller.AddPlatformCollider(p, newPlatform.GetGlobalBounds());
-            }            
-        }
-        private void SetBarrier(Level level)
+        private void AddHPIcon()
         {
-            int barrierSize = 300;
-            uint windowX = MainWindow.Size.X;
-            uint windowY = MainWindow.Size.Y;
-            level.barrier.Add(new FloatRect(0, -barrierSize, windowX, barrierSize));
-            level.barrier.Add(new FloatRect(0, windowY, windowX, barrierSize));
-            level.barrier.Add(new FloatRect(-barrierSize, 0, barrierSize, windowY));
-            level.barrier.Add(new FloatRect(windowX, 0, barrierSize, windowY));
-            //xywh
+            Texture model = new Texture(_folderHPPath);
+            _HPIcon = new Sprite(model);
+            _HPIcon.Position = new Vector2f(0, _window.Size.Y - _HPIcon.Texture.Size.Y);
         }
-        public void LoadLevel(Level level)
+        private void SetText(Text text, string newString)
         {
-            AddPlatforms(level);
-            SetBarrier(level);
-            AddPlayerModel(level.player);
- //           AddIdlePlayerModel(level.player);            
+            text.DisplayedString = newString;
         }
-        public void PlayIdleAnimation()
+        private void SetTextDefaultSettings(Text text)
         {
-            _idleAnimationData.MoveToNext();
-            CurrentPlayerModel = _idleAnimationData.GetCurrent();
-//            CurrentPlayerModel.Position = _controller.GetPlayerPosition();
+            text.Font = _font;
+            text.CharacterSize = TEXT_SIZE;
         }
-        //public void PlayerAnimator()
-        //{
-        //    float x = PlayerModel.Position.X;
-        //    float y = PlayerModel.Position.Y;
-        //    if (PlayerModel.Radius == 0) 
-        //    {
-        //        PlayerModel.Radius = startRadius;
-        //        PlayerModel.Position = new Vector2f(x-startRadius, y-startRadius);
-        //    }
-        //    else
-        //    {
-        //        PlayerModel.Radius = --(PlayerModel.Radius);
-        //        PlayerModel.Position = new Vector2f(++x, ++y);
-        //    }
-        //}
-        void OnClose(object sender, EventArgs e)
+        public void UpdateScore(int score)
         {
-            // Close the window when OnClose event is received
-            RenderWindow window = (RenderWindow)sender;
-            window.Close();
+            SetText(_score, "Score : "+score.ToString());
         }
-        public void UpdateModelPosition(int x, int y) 
+        public void UpdateHealth(int newHealth)
         {
-            CurrentPlayerModel.Position = new Vector2f(x, y);
+            SetText(_health, newHealth.ToString());
         }
-        public void AddInputHandler(EventHandler<KeyEventArgs> handler)
+        public void CreateEndGameScreen()
         {
-            MainWindow.KeyPressed += handler;
+            _window.Clear(Color.Black);
+            Text finalText = new Text();
+            SetText(finalText, "Game Over!");
+            SetTextDefaultSettings(finalText);
+            finalText.Position = new Vector2f(_window.Size.X / 3, _window.Size.Y / 3);
+            _score.Position = new Vector2f(finalText.Position.X, finalText.Position.Y + TEXT_SIZE * 2);
+            _window.Draw(finalText);
+            _window.Draw(_score);
+            _window.Display();
         }
     }
 }

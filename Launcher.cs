@@ -15,11 +15,10 @@ namespace Lab4
         {
             RenderWindow window = (RenderWindow)sender;
             window.Close();
-        }
-        
+        }        
         static void Main()
         {                      
-            RenderWindow MainWindow = new RenderWindow(new VideoMode(1300, 900), "Yonko's adventures");
+            RenderWindow MainWindow = new RenderWindow(new VideoMode(1300, 1000), "Yonko's adventures");
             MainWindow.SetFramerateLimit(60);
             MainWindow.Closed += new EventHandler(OnClose);
 
@@ -33,13 +32,38 @@ namespace Lab4
 
             while (MainWindow.IsOpen)
             {
+                if (!controller.IsNotGameOver)
+                {
+                    break;
+                }
                 MainWindow.DispatchEvents();
-                controller.MovementHandler();                
+                controller.MovementHandler();
                 controller.Update();
                 visual.DrawScene();
             }
-            
-        }
+            while (MainWindow.IsOpen)
+            {
+                controller.ShowFinalResult();
+            }
+            //while (MainWindow.IsOpen)
+            //{
+            //    //second way
+            //    if (controller.IsNotGameOver)
+            //    {
+            //        MainWindow.DispatchEvents();
+            //        controller.MovementHandler();
+            //    }
+            //    if (!controller.IsNotGameOver)
+            //    {
+            //        controller.ShowFinalResult();
+            //    }
+            //    else
+            //    {
+            //        controller.Update();
+            //        visual.DrawScene();
+            //    }
 
+            //}
+        }
     }
 }

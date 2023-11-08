@@ -24,14 +24,6 @@ namespace Lab4
                 _objects.Add(obj);
             }
         }
-        public ObjectPool(int initialNumberOfObjects, int maxAmountOfObjects) : this(initialNumberOfObjects)
-        {
-            if (maxAmountOfObjects < 0)
-            { 
-                throw new ArgumentOutOfRangeException(); 
-            }
-            _maxAmountOfObjects = maxAmountOfObjects;
-        }
         public T Get()
         {
             var obj = _objects.FirstOrDefault(x=>!x.IsActive);

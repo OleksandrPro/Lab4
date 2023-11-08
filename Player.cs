@@ -13,11 +13,25 @@ namespace Lab4
     {
         private int _x;
         private int _y;
+        private int _health;
         private PlayerState _currentState;
         private PlayerState _previousState;
         public int Height { get; set; }
         public int Width { get; set; }
-        public int Health { get; set; }
+        public int Health 
+        { 
+            get
+            {
+                return _health;
+            }
+            set
+            {
+                _health = value;
+                HealthChanged?.Invoke(this, new EventArgs());
+                if (_health == 0)
+                    Died?.Invoke(this, new EventArgs());
+            }
+        }
         public FloatRect Collider { get; set; }
         private PlayerStateMachine _states;
         public PlayerState CurrentState
@@ -78,24 +92,28 @@ namespace Lab4
                 }
             }
         }
-        public delegate void PositionChanged(object sender, EventArgs e);
-        public event PositionChanged NewPosition;
+        public delegate void PositionChange(object sender, EventArgs e);
+        public event PositionChange NewPosition;
         public delegate void StateChange(object sender, EventArgs e);
-        public event StateChange StateChanged;        
+        public event StateChange StateChanged;
+        public delegate void HealthChange(object sender, EventArgs e);
+        public event HealthChange HealthChanged;
+        public event HealthChange Died;
         public Player(int x, int y, int width, int height, int health)
         {
+            if (health <= 0)
+                throw new ArgumentException("HP can't be 0 or lower");
             X = x;
             Y = y;
             Height = height;
             Width = width;
             Health = health;
-
             _states = new PlayerStateMachine(this);
             
             _states.NewState += NewStateHandler;
             _states.EnterIn<IdleRight>();
         }
-        public Player(int x, int y, int width, int height) : this(x, y, width, height, 3) { }
+        public Player(int x, int y, int width, int height) : this(x, y, width, height, Model.PLAYER_START_HEALTH) { }
         public void ChangeState<TypeOfState>() where TypeOfState : PlayerState
         {
             if (typeof(TypeOfState) != StateType)
@@ -124,16 +142,13 @@ namespace Lab4
                 CurrentState.BackToIdle();
             }                
         }
-        public void BackToMoving()
+        public void ApplyDamage()
         {
-            if (StateType != typeof(MovingLeft) ||   StateType != typeof(MovingRight)) 
-            {
-                CurrentState.BackToMoving();
-            }            
+            ApplyCertainDamage(Model.OBJECT_DAMAGE);
         }
-        public void GoToOppositeMovingDirection()
+        private void ApplyCertainDamage(int damage)
         {
-            CurrentState.GoToOppositeMovingDirection();
+            Health -= damage;
         }
     }
 }

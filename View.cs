@@ -16,9 +16,11 @@ namespace Lab4
         private Controller _controller;
 
         public Sprite CurrentPlayerModel;
-        private List<RectangleShape> Platforms;
+//        private List<RectangleShape> Platforms;
+        private List<Sprite> Platforms;
 
         private List<Sprite> FallingObjects;
+        private List<Sprite> FallingScoreObjects;
 
         private LinkedList<Sprite> _currentAnimation;
         private LinkedList<Sprite> _idleRightAnimation;
@@ -26,14 +28,12 @@ namespace Lab4
         private LinkedList<Sprite> _movingRightAnimation;
         private LinkedList<Sprite> _movingLeftAnimation;
         private Dictionary<Type, LinkedList<Sprite>> _stateAnimationPairs;
+        private UI _UI;
 
         private string _folderPathSingleSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\newPlaceholder.png";
         private string _folderPathFireBallSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\fireball2.png";
-
-        //private string _folderPathIdleRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\IdleRight";
-        //private string _folderPathIdleLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\IdleLeft";
-        //private string _folderPathMovingRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\MovingRight";
-        //private string _folderPathMovingLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\MovingLeft";
+        private string _folderPathFloorSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\floor.png";
+        private string _folderPathMeatSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\meat.png";
 
         private string _folderPathIdleRight = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\Luffy\\IdleRight";
         private string _folderPathIdleLeft = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\Luffy\\IdleLeft";
@@ -47,8 +47,10 @@ namespace Lab4
         {
             GameWindow = window;
 
-            Platforms = new List<RectangleShape>();
+//            Platforms = new List<RectangleShape>();
+            Platforms = new List<Sprite>();
             FallingObjects = new List<Sprite>();
+            FallingScoreObjects = new List<Sprite>();
 
             _idleRightAnimation = new LinkedList<Sprite>();
             _idleLeftAnimation = new LinkedList<Sprite>();
@@ -67,6 +69,7 @@ namespace Lab4
                 [typeof(MovingRight)] = _movingRightAnimation,
                 [typeof(MovingLeft)] = _movingLeftAnimation
             };
+            _UI = new UI(window);
         }
         public void AddController(Controller controller)
         {
@@ -75,7 +78,7 @@ namespace Lab4
         public void DrawScene()
         {
             GameWindow.Clear(new Color(Color.Black));
-
+            
             GameWindow.Draw(CurrentPlayerModel);
             foreach (var p in Platforms)
             {
@@ -85,7 +88,12 @@ namespace Lab4
             {
                 GameWindow.Draw(g);
             }
+            foreach (var m in FallingScoreObjects)
+            {
+                GameWindow.Draw(m);
+            }
             PlayPlayerAnimation();
+            _UI.Draw();
             GameWindow.Display();
         }
         public void LoadLevel(Level level) 
@@ -98,9 +106,9 @@ namespace Lab4
         {
             foreach (var p in level.platforms)
             {
-                RectangleShape newPlatform = new RectangleShape(new Vector2f(p.Height, p.Width));
+                Texture model = new Texture(_folderPathFloorSprite);
+                Sprite newPlatform = new Sprite(model);
                 newPlatform.Position = new Vector2f(p.X, p.Y);
-                newPlatform.FillColor = Color.Cyan;
                 Platforms.Add(newPlatform);
                 _controller.AddPlatformCollider(p, newPlatform.GetGlobalBounds());
             }
@@ -169,10 +177,23 @@ namespace Lab4
             FallingObjects.Add(newFObjSprite);
             _controller.AddFallingObjectCollider(fObj, newFObjSprite.GetGlobalBounds());
         }
+        public void AddFallingScoreObject(FallingObject fObj)
+        {
+            Texture model = new Texture(_folderPathMeatSprite);
+            Sprite newFObjSprite = new Sprite(model);
+            newFObjSprite.Position = new Vector2f(fObj.X, fObj.Y);
+            FallingScoreObjects.Add(newFObjSprite);
+            _controller.AddFallingObjectCollider(fObj, newFObjSprite.GetGlobalBounds());
+        }
         public void RemoveFallingObjectSprite(int x, int y)
         {
             Sprite toRemove = FallingObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
             FallingObjects.Remove(toRemove);
+        }
+        public void RemoveFallingScoreObjectSprite(int x, int y)
+        {
+            Sprite toRemove = FallingScoreObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
+            FallingScoreObjects.Remove(toRemove);
         }
         public void UpdateModelPosition(int x, int y)
         {
@@ -180,8 +201,13 @@ namespace Lab4
         }
         public void UpdateFallingObjectPosition(int y)
         {
+            UpdatePositionForCollection(y, FallingObjects);
+            UpdatePositionForCollection(y, FallingScoreObjects);
+        }
+        private void UpdatePositionForCollection(int y, List<Sprite> list)
+        {
             Sprite s = null;
-            foreach (var item in FallingObjects)
+            foreach (var item in list)
             {
                 item.Position = new Vector2f(item.Position.X, item.Position.Y + y);
                 if (item.Position.Y >= GameWindow.Size.Y)
@@ -191,8 +217,20 @@ namespace Lab4
             }
             if (s != null)
             {
-                FallingObjects.Remove(s);
+                list.Remove(s);
             }
+        }
+        public void UpdateUIHealth(int newHealth)
+        {
+            _UI.UpdateHealth(newHealth);
+        }
+        public void UpdateUIScore(int newScore)
+        {
+            _UI.UpdateScore(newScore);
+        }
+        public void SetEndGameScreen()
+        {
+            _UI.CreateEndGameScreen();
         }
     }
 }

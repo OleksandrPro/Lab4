@@ -18,17 +18,22 @@ namespace Lab4
 
         private Random _random;
         private Timer _fallingObjectsTimer;
+        private Timer _fallingScoreObjectsTimer;
         private Player _player;
         private Level _currentLevel;
 
-        private int _objectsFallingSpeed = 2;
-        private const int OBJECT_DAMAGE = 1;
         private Stopwatch keyPressStopwatch = new Stopwatch();
-        private Keyboard.Key _previousXAxisKey = Keyboard.Key.Unknown;
 
         bool isAKeyPressed = false;
         bool isDKeyPressed = false;
         private readonly object keyLock = new object();
+
+        private bool _isNotGameOver = true;
+        public bool IsNotGameOver
+        {
+            get { return _isNotGameOver; }
+            set { _isNotGameOver = value; }
+        }
 
         public Controller(View view, Model model)
         {
@@ -38,9 +43,13 @@ namespace Lab4
             view.GameWindow.KeyReleased += OnKeyReleasedHorizontal;
             view.GameWindow.KeyPressed += OnKeyPressedVertical;
 
+            _model.ScoreChanged += UpdateUIScore;
+
             _random = new Random();
-            _fallingObjectsTimer = new Timer(1000);
+            _fallingObjectsTimer = new Timer(Model.FALLING_OBJECT_SPAWN_TIME);
             _fallingObjectsTimer.Elapsed += SpawnFallingObject;
+            _fallingScoreObjectsTimer = new Timer(Model.FALLING_SCORE_OBJECT_SPAWN_TIME);
+            _fallingScoreObjectsTimer.Elapsed += SpawnFallingScoreObject;
 
             _player = model.currentLevel.player;
             _currentLevel = model.currentLevel;
@@ -48,8 +57,11 @@ namespace Lab4
             _player.NewPosition += UpdatePlayerPos;
             _player.NewPosition += UpdatePlayerColliderPosition;
             _player.StateChanged += UpdateAnimation;
+            _player.HealthChanged += UpdateUIHealth;
+            _player.Died += EndGame;
 
             _fallingObjectsTimer.Enabled = true;
+            _fallingScoreObjectsTimer.Enabled = true;
             keyPressStopwatch.Start();
         }
         public void OnKeyPressedHorizontal(object sender, EventArgs e)
@@ -124,9 +136,15 @@ namespace Lab4
         private void SpawnFallingObject(Object source, ElapsedEventArgs e)
         {
             //engine or model
-            int randomObjPos = _random.Next(0, 1200);
+            int randomObjPos = _random.Next(0, 1250);
             FallingObject fObj = _model.SpawnFallingObject(randomObjPos, 0);
             _view.AddFallingObject(fObj);
+        }
+        private void SpawnFallingScoreObject(Object source, ElapsedEventArgs e)
+        {
+            int randomObjPos = _random.Next(0, 1250);
+            FallingObject fObj = _model.SpawnFallingScoreObject(randomObjPos, 0);
+            _view.AddFallingScoreObject(fObj);
         }
         void UpdatePlayerPos(object sender, EventArgs e)
         {
@@ -198,32 +216,42 @@ namespace Lab4
             }
             return false;
         }
-        public void CheckAllGameObjectsCollision()
+        private FallingObject CheckGameObjectsCollision(List<FallingObject> list)
         {
             FallingObject toDestroy = null;
-            foreach (var item in _model.SpawnedObjects)
+            foreach (var item in list)
             {
                 bool isCollide = Engine.isIntersect(_player.Collider, item.Collider);
-//                Console.WriteLine("status: "+isCollide);
                 if (isCollide)
                 {
-                    _player.Health -= OBJECT_DAMAGE;
                     toDestroy = item;
-                    Console.WriteLine("Player health: "+_player.Health);
-                    //Console.WriteLine("------------------");
-                    //Console.WriteLine();
-                    //Console.WriteLine("-10 HP");
-                    //Console.WriteLine();
-                    //Console.WriteLine("------------------");
+                    return toDestroy;                                       
                 }
             }
-            if (toDestroy != null)
+            return toDestroy;
+        }
+        private void CheckDamageObjectsCollision()
+        {
+            FallingObject fObj = CheckGameObjectsCollision(_model.SpawnedObjects);
+            if(fObj!=null)
             {
-//                Console.WriteLine($"to destroy: x = {toDestroy.X},  y = {toDestroy.Y}");
-                int x = toDestroy.X;
-                int y = toDestroy.Y;
-                _model.DespawnFallingObject(toDestroy);
+                int x = fObj.X;
+                int y = fObj.Y;
+                _model.DespawnFallingObject(fObj);
                 _view.RemoveFallingObjectSprite(x, y);
+                _player.ApplyDamage();
+            }
+        }
+        private void CheckScoreObjectsCollision()
+        {
+            FallingObject fObj = CheckGameObjectsCollision(_model.SpawnedScoreObjects);
+            if (fObj != null)
+            {
+                int x = fObj.X;
+                int y = fObj.Y;
+                _model.DespawnFallingScoreObject(fObj);
+                _view.RemoveFallingScoreObjectSprite(x, y);
+                _model.AddScore();
             }
         }
         public void RenderLevel()
@@ -247,26 +275,53 @@ namespace Lab4
             fObj.Collider = collider;
             Engine.InitCollider(fObj.Collider, fObj.X, fObj.Y, fObj.Collider.Height, fObj.Collider.Width);
         }
-        public void Update()
+        private FallingObject UpdateFallingObjectsPossition(List<FallingObject> list)
         {
-            CheckAllGameObjectsCollision();
             FallingObject toDestroy = null;
-            foreach (var item in _model.SpawnedObjects)
+            foreach (var item in list)
             {
-                item.IncreaseVerticalSpeed(_objectsFallingSpeed);
+                item.IncreaseVerticalSpeed(Model.OBJECT_FALLING_SPEED);
                 item.UpdateColliderPosition();
                 if (item.Y >= _view.GameWindow.Size.Y)
                 {
                     toDestroy = item;
                 }
-//                item.Print();
             }
+            return toDestroy;
+        }
+        public void Update()
+        {
+            CheckDamageObjectsCollision();
+            CheckScoreObjectsCollision();
+            FallingObject toDestroy = UpdateFallingObjectsPossition(_model.SpawnedObjects);
             if (toDestroy != null)
             {
                 _model.DespawnFallingObject(toDestroy);                
             }
-            _view.UpdateFallingObjectPosition(_objectsFallingSpeed);
-//            Console.WriteLine(_model.SpawnedObjects.Count);
+
+            toDestroy = UpdateFallingObjectsPossition(_model.SpawnedScoreObjects);
+            if (toDestroy != null)
+            {
+                _model.DespawnFallingScoreObject(toDestroy);
+            }
+            _view.UpdateFallingObjectPosition(Model.OBJECT_FALLING_SPEED);
+        }
+        public void UpdateUIHealth(object sender, EventArgs e)
+        {
+            Player player = (Player)sender;
+            _view.UpdateUIHealth(player.Health);
+        }
+        public void UpdateUIScore(object sender, EventArgs e)
+        {
+            _view.UpdateUIScore(_model.Score);
+        }
+        public void EndGame(object sender, EventArgs e)
+        {
+            _isNotGameOver = false;            
+        }
+        public void ShowFinalResult()
+        {
+            _view.SetEndGameScreen();
         }
     }
 }
