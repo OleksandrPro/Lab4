@@ -1,10 +1,10 @@
 ﻿namespace Lab4
 {
-    public abstract class PlayerState
+    public interface IPlayerState
     {
-        public abstract int MovementCoeffcientX { get; }
+        int MovementCoeffcientX { get; }
         
-        public abstract void Move();
-        public abstract void BackToIdle();
+        void Move();
+        void BackToIdle();
     }
 }

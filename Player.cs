@@ -9,8 +9,7 @@ namespace Lab4
         private int _x;
         private int _y;
         private int _health;
-        private PlayerState _currentState;
-        private PlayerState _previousState;
+        private IPlayerState _currentState;
         public int Health 
         { 
             get
@@ -27,7 +26,7 @@ namespace Lab4
         }
         public FloatRect Collider { get; set; }
         private PlayerStateMachine _states;
-        public PlayerState CurrentState
+        public IPlayerState CurrentState
         {
             get
             {
@@ -37,7 +36,6 @@ namespace Lab4
             {
                 if (_currentState != value)
                 {
-                    _previousState = _currentState;
                     _currentState = value;
                     StateChanged?.Invoke(this, new EventArgs());
                 }
@@ -110,7 +108,7 @@ namespace Lab4
                 observer.Update(this);
             }
         }
-        public void ChangeState<TypeOfState>() where TypeOfState : PlayerState
+        public void ChangeState<TypeOfState>() where TypeOfState : IPlayerState
         {
             if (typeof(TypeOfState) != StateType)
             {
