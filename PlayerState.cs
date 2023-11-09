@@ -2,8 +2,7 @@
 {
     public interface IPlayerState
     {
-        int MovementCoeffcientX { get; }
-        
+        int MovementCoeffcientX { get; }        
         void Move();
         void BackToIdle();
     }

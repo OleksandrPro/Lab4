@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Lab4
 {
-    public class Player : ISubject
+    public class Player : IHealthEvents, IStateUpdate, IPositionChanged
     {
         private int _x;
         private int _y;
@@ -19,7 +19,7 @@ namespace Lab4
             set
             {
                 _health = value;
-                HealthChanged?.Invoke(this, new EventArgs());
+                HealthEventNotify();
                 if (_health == 0)
                     Died?.Invoke(this, new EventArgs());
             }
@@ -37,7 +37,7 @@ namespace Lab4
                 if (_currentState != value)
                 {
                     _currentState = value;
-                    StateChanged?.Invoke(this, new EventArgs());
+                    StateEventNotify();
                 }
             }
         }       
@@ -52,8 +52,8 @@ namespace Lab4
             {
                 if (_x != value)
                 {
-                    _x = value; 
-                    Notify();
+                    _x = value;
+                    PositionChangeNotify();
                 }
             }
         }
@@ -68,14 +68,14 @@ namespace Lab4
                 if (value != _y)
                 {
                     _y = value;
-                    Notify();
+                    PositionChangeNotify();
                 }
             }
         }
-        private List<IObserver> _observers = new List<IObserver>();
+        private List<IPositionChangeObserver> _positionChangeObservers = new List<IPositionChangeObserver>();
+        private List<IHealthEventObserver> _healthEventObservers = new List<IHealthEventObserver>();
+        private List<IStateObserver> _stateEventObservers = new List<IStateObserver>();
 
-        public delegate void StateChange(object sender, EventArgs e);
-        public event StateChange StateChanged;
         public delegate void HealthChange(object sender, EventArgs e);
         public event HealthChange HealthChanged;
         public event HealthChange Died;
@@ -92,21 +92,50 @@ namespace Lab4
             _states.EnterIn<IdleRight>();
         }
         public Player(int x, int y) : this(x, y, Model.PLAYER_START_HEALTH) { }
-        public void Attach(IObserver observer)
+        public void Attach(IPositionChangeObserver observer)
         {
-            _observers.Add(observer);
+            _positionChangeObservers.Add(observer);
         }
-        public void Detach(IObserver observer)
+        public void Detach(IPositionChangeObserver observer)
         {
-            _observers.Remove(observer);
+            _positionChangeObservers.Remove(observer);
         }
-        public void Notify()
+        public void PositionChangeNotify()
         {
-
-            foreach (var observer in _observers)
+            foreach (var observer in _positionChangeObservers)
             {
                 observer.Update(this);
             }
+        }
+        public void Attach(IHealthEventObserver observer)
+        {
+            _healthEventObservers.Add(observer);
+        }
+        public void Detach(IHealthEventObserver observer)
+        {
+            _healthEventObservers.Remove(observer);
+        }
+        public void HealthEventNotify()
+        {
+            foreach (var observer in _healthEventObservers)
+            {
+                observer.Update(this);
+            }
+        }
+        public void Attach(IStateObserver observer)
+        {
+            _stateEventObservers.Add(observer);
+        }
+        public void Detach(IStateObserver observer)
+        {
+            _stateEventObservers.Remove(observer);
+        }
+        public void StateEventNotify()
+        {
+            foreach (var observer in _stateEventObservers)
+            {
+                observer.Update(this);
+            }            
         }
         public void ChangeState<TypeOfState>() where TypeOfState : IPlayerState
         {

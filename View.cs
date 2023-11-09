@@ -7,13 +7,12 @@ using System.Linq;
 
 namespace Lab4
 {
-    public class View : IObserver
+    public class View : IPositionChangeObserver
     {
         public RenderWindow GameWindow { get; private set; }
         private IControllerView _controller;
 
         public Sprite CurrentPlayerModel;
-//        private List<RectangleShape> Platforms;
         private List<Sprite> Platforms;
 
         private List<Sprite> FallingObjects;
@@ -26,6 +25,7 @@ namespace Lab4
         private LinkedList<Sprite> _movingLeftAnimation;
         private Dictionary<Type, LinkedList<Sprite>> _stateAnimationPairs;
         private UI _UI;
+        public UI UI { get { return _UI; } }
 
         private const string _folderPathFireBallSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\fireball2.png";
         private const string _folderPathFloorSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\floor.png";
@@ -43,7 +43,6 @@ namespace Lab4
         {
             GameWindow = window;
 
-//            Platforms = new List<RectangleShape>();
             Platforms = new List<Sprite>();
             FallingObjects = new List<Sprite>();
             FallingScoreObjects = new List<Sprite>();
@@ -191,10 +190,10 @@ namespace Lab4
             Sprite toRemove = FallingScoreObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
             FallingScoreObjects.Remove(toRemove);
         }
-        public void Update(ISubject subject)
+        public void Update(IPositionChanged subject)
         {
-            Player p = subject as Player;
-            UpdateModelPosition(p.X, p.Y);
+            Player player = subject as Player;
+            UpdateModelPosition(player.X, player.Y);
         }
         private void UpdateModelPosition(int x, int y)
         {
@@ -221,17 +220,9 @@ namespace Lab4
                 list.Remove(s);
             }
         }
-        public void UpdateUIHealth(int newHealth)
-        {
-            _UI.UpdateHealth(newHealth);
-        }
-        public void UpdateUIScore(int newScore)
-        {
-            _UI.UpdateScore(newScore);
-        }
         public void SetEndGameScreen()
         {
             _UI.CreateEndGameScreen();
-        }
+        }        
     }
 }

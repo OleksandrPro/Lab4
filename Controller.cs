@@ -6,7 +6,7 @@ using System.Timers;
 
 namespace Lab4
 {
-    public class Controller : IObserver, IControllerLaunch, IControllerView
+    public class Controller : IControllerLaunch, IControllerView, IPositionChangeObserver, IStateObserver
     {
         private View _view;
         private Model _model;
@@ -33,8 +33,6 @@ namespace Lab4
             view.GameWindow.KeyReleased += OnKeyReleasedHorizontal;
             view.GameWindow.KeyPressed += OnKeyPressedVertical;
 
-            _model.ScoreChanged += UpdateUIScore;
-
             _random = new Random();
             _fallingObjectsTimer = new Timer(Model.FALLING_OBJECT_SPAWN_TIME);
             _fallingObjectsTimer.Elapsed += SpawnFallingObject;
@@ -45,15 +43,16 @@ namespace Lab4
             _currentLevel = model.CurrentLevel;
 
             _player.Attach(_view);
-            _player.Attach((IObserver)this);
+            _player.Attach((IHealthEventObserver)_view.UI);
+            _player.Attach((IPositionChangeObserver)this);
+            _player.Attach((IStateObserver)this);
 
-            _player.StateChanged += UpdateAnimation;
-            _player.HealthChanged += UpdateUIHealth;
+            _model.Attach((IScoreUpdateObserver)_view.UI);
+
             _player.Died += EndGame;
 
             _fallingObjectsTimer.Enabled = true;
             _fallingScoreObjectsTimer.Enabled = true;
-//            keyPressStopwatch.Start();
         }
         public void OnKeyPressedHorizontal(object sender, EventArgs e)
         {
@@ -90,14 +89,17 @@ namespace Lab4
             }
             MovePlayerVertical(Model.VERTICAL_UNIT_SIZE * movementCoeff);
         }
-        public void Update(ISubject subject)
+        public void Update(IPositionChanged subject)
         {
             Player p = subject as Player;
             p.Collider = GetColiderOfModel();
         }
+        public void Update(IStateUpdate subject)
+        {
+            _view.UpdateAnimation(_player);
+        }        
         public void MovementHandler()
         {
-            //engine
             if (!isAKeyPressed && !isDKeyPressed)
             {
                 if (_player.CurrentState is MovingLeft)
@@ -134,10 +136,6 @@ namespace Lab4
             int randomObjPos = _random.Next(0, 1250);
             FallingObject fObj = _model.SpawnFallingScoreObject(randomObjPos, 0);
             _view.AddFallingScoreObject(fObj);
-        }
-        void UpdateAnimation(object sender, EventArgs e)
-        {
-            _view.UpdateAnimation(_player);
         }
         public FloatRect GetColiderOfModel()
         {
@@ -282,15 +280,6 @@ namespace Lab4
                 _model.DespawnFallingScoreObject(toDestroy);
             }
             _view.UpdateFallingObjectPosition(Model.OBJECT_FALLING_SPEED);
-        }
-        public void UpdateUIHealth(object sender, EventArgs e)
-        {
-            Player player = (Player)sender;
-            _view.UpdateUIHealth(player.Health);
-        }
-        public void UpdateUIScore(object sender, EventArgs e)
-        {
-            _view.UpdateUIScore(_model.Score);
         }
         public void EndGame(object sender, EventArgs e)
         {

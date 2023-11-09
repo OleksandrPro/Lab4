@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Lab4
 {
-    public class Model
+    public class Model : IScoreUpdate
     {
         private Controller _controller;
 
@@ -14,6 +14,7 @@ namespace Lab4
         private ObjectPool<FallingObject> _fallingScoreObjects;
         public List<FallingObject> SpawnedObjects { get; private set; }
         public List<FallingObject> SpawnedScoreObjects { get; private set; }
+        private List<IScoreUpdateObserver> _scoreUpdateObservers = new List<IScoreUpdateObserver>();
 
         public const int HORIZONTAL_UNIT_SIZE = 10;
         public const int VERTICAL_UNIT_SIZE = 250;
@@ -38,11 +39,10 @@ namespace Lab4
                 if (value != _score) 
                 {
                     _score = value;
-                    ScoreChanged?.Invoke(this, EventArgs.Empty);
+                    ScoreUpdateNotify();
                 }
             }
         }
-
         public Model()
         {
             _currentLevel = new Level1();
@@ -52,8 +52,21 @@ namespace Lab4
             SpawnedScoreObjects = new List<FallingObject>();
             Score = 0;
         }
-        public delegate void ScoreChange(object sender, EventArgs e);
-        public event ScoreChange ScoreChanged;
+        public void Attach(IScoreUpdateObserver observer)
+        {
+            _scoreUpdateObservers.Add(observer);
+        }
+        public void Detach(IScoreUpdateObserver observer)
+        {
+            _scoreUpdateObservers.Remove(observer);
+        }
+        public void ScoreUpdateNotify()
+        {
+            foreach (var observer in _scoreUpdateObservers)
+            {
+                observer.Update(this);
+            }
+        }
         public void AddController(Controller controller)
         {
             _controller = controller;

@@ -7,7 +7,6 @@ namespace Lab4
     public class ObjectPool<T> where T : GameObject, new()
     {
         private List<T> _objects;
-        private int _maxAmountOfObjects;
         public ObjectPool(int initialNumberOfObjects) 
         {
             if (initialNumberOfObjects < 0)
