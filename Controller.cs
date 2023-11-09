@@ -11,10 +11,10 @@ using System.Timers;
 
 namespace Lab4
 {
-    public class Controller
+    public class Controller : IObserver, IControllerLaunch, IControllerView
     {
-        View _view;
-        Model _model;
+        private View _view;
+        private Model _model;
 
         private Random _random;
         private Timer _fallingObjectsTimer;
@@ -22,19 +22,14 @@ namespace Lab4
         private Player _player;
         private Level _currentLevel;
 
-        private Stopwatch keyPressStopwatch = new Stopwatch();
-
-        bool isAKeyPressed = false;
-        bool isDKeyPressed = false;
-        private readonly object keyLock = new object();
-
+        private bool isAKeyPressed = false;
+        private bool isDKeyPressed = false;
         private bool _isNotGameOver = true;
         public bool IsNotGameOver
         {
             get { return _isNotGameOver; }
             set { _isNotGameOver = value; }
         }
-
         public Controller(View view, Model model)
         {
             _view = view;
@@ -51,45 +46,40 @@ namespace Lab4
             _fallingScoreObjectsTimer = new Timer(Model.FALLING_SCORE_OBJECT_SPAWN_TIME);
             _fallingScoreObjectsTimer.Elapsed += SpawnFallingScoreObject;
 
-            _player = model.currentLevel.player;
-            _currentLevel = model.currentLevel;
+            _player = model.CurrentLevel.player;
+            _currentLevel = model.CurrentLevel;
 
-            _player.NewPosition += UpdatePlayerPos;
-            _player.NewPosition += UpdatePlayerColliderPosition;
+            _player.Attach(_view);
+            _player.Attach((IObserver)this);
+
             _player.StateChanged += UpdateAnimation;
             _player.HealthChanged += UpdateUIHealth;
             _player.Died += EndGame;
 
             _fallingObjectsTimer.Enabled = true;
             _fallingScoreObjectsTimer.Enabled = true;
-            keyPressStopwatch.Start();
+//            keyPressStopwatch.Start();
         }
         public void OnKeyPressedHorizontal(object sender, EventArgs e)
         {
-            lock (keyLock)
+            if (((KeyEventArgs)e).Code == Keyboard.Key.A)
             {
-                if (((KeyEventArgs)e).Code == Keyboard.Key.A)
-                {
-                    isAKeyPressed = true;
-                }
-                if (((KeyEventArgs)e).Code == Keyboard.Key.D)
-                {
-                    isDKeyPressed = true;
-                }
+                isAKeyPressed = true;
+            }
+            if (((KeyEventArgs)e).Code == Keyboard.Key.D)
+            {
+                isDKeyPressed = true;
             }
         }
         public void OnKeyReleasedHorizontal(object sender, EventArgs e)
         {
-            lock (keyLock)
+            if (((KeyEventArgs)e).Code == Keyboard.Key.A)
             {
-                if (((KeyEventArgs)e).Code == Keyboard.Key.A)
-                {
-                    isAKeyPressed = false;
-                }
-                if (((KeyEventArgs)e).Code == Keyboard.Key.D)
-                {
-                    isDKeyPressed = false;
-                }
+                isAKeyPressed = false;
+            }
+            if (((KeyEventArgs)e).Code == Keyboard.Key.D)
+            {
+                isDKeyPressed = false;
             }
         }
         public void OnKeyPressedVertical(object sender, EventArgs e)
@@ -104,6 +94,11 @@ namespace Lab4
                 movementCoeff = 1;
             }
             MovePlayerVertical(Model.VERTICAL_UNIT_SIZE * movementCoeff);
+        }
+        public void Update(ISubject subject)
+        {
+            Player p = subject as Player;
+            p.Collider = GetColiderOfModel();
         }
         public void MovementHandler()
         {
@@ -135,7 +130,6 @@ namespace Lab4
         }
         private void SpawnFallingObject(Object source, ElapsedEventArgs e)
         {
-            //engine or model
             int randomObjPos = _random.Next(0, 1250);
             FallingObject fObj = _model.SpawnFallingObject(randomObjPos, 0);
             _view.AddFallingObject(fObj);
@@ -146,18 +140,6 @@ namespace Lab4
             FallingObject fObj = _model.SpawnFallingScoreObject(randomObjPos, 0);
             _view.AddFallingScoreObject(fObj);
         }
-        void UpdatePlayerPos(object sender, EventArgs e)
-        {
-            //engine
-            ChangePositionEventArgs changepos = (ChangePositionEventArgs)e;
-            _view.UpdateModelPosition(changepos.X, changepos.Y);
-        }
-        void UpdatePlayerColliderPosition(object sender, EventArgs e)
-        {
-            //properties
-            Player player = (Player)sender;
-            player.Collider = GetColiderOfModel();
-        }
         void UpdateAnimation(object sender, EventArgs e)
         {
             _view.UpdateAnimation(_player);
@@ -166,7 +148,7 @@ namespace Lab4
         {
             return _view.CurrentPlayerModel.GetGlobalBounds();
         }
-        public void MovePlayerHorizontal()
+        private void MovePlayerHorizontal()
         {
             bool possibleCollision = PreUpdateX(_player);
             if (possibleCollision)
@@ -175,7 +157,7 @@ namespace Lab4
             }
             _player.MoveHorizontal();
         }
-        public void MovePlayerVertical(int y)
+        private void MovePlayerVertical(int y)
         {
             bool possibleCollision = PreUpdateY(_player, y);
             if (possibleCollision)
@@ -184,19 +166,19 @@ namespace Lab4
             }
             _player.MoveVertical(y);
         }
-        public bool PreUpdateX(Player p)
+        private bool PreUpdateX(Player p)
         {
             FloatRect newCollider = p.Collider;
             newCollider.Left += p.CurrentState.MovementCoeffcientX * Model.HORIZONTAL_UNIT_SIZE;
             return CheckPlayerPossibleCollision(newCollider);
         }
-        public bool PreUpdateY(Player p, int posChange)
+        private bool PreUpdateY(Player p, int posChange)
         {
             FloatRect newCollider = p.Collider;
             newCollider.Top += posChange;
             return CheckPlayerPossibleCollision(newCollider);
         }
-        public bool CheckPlayerPossibleCollision(FloatRect playerCollider)
+        private bool CheckPlayerPossibleCollision(FloatRect playerCollider)
         {
             foreach (var item in _currentLevel.platforms)
             {

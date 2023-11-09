@@ -20,11 +20,11 @@ namespace Lab4
         private Text _health;
         private Text _score;
         private RectangleShape _bar;
-        public const int TEXT_SIZE = 50;
+        private const int TEXT_SIZE = 50;
         private Sprite _HPIcon;
 
-        public const int BAR_HEIGHT = 100;
-        public const int BAR_WIDTH = 1300;
+        private const int BAR_HEIGHT = 100;
+        private const int BAR_WIDTH = 1300;
         private const bool NEED_BAR = false;
         public UI(RenderWindow window)
         {
@@ -33,11 +33,11 @@ namespace Lab4
             _health = new Text();
             SetText(_health, Model.PLAYER_START_HEALTH.ToString());
             SetTextDefaultSettings(_health);
-            _health.Position = new Vector2f(2 * TEXT_SIZE, window.Size.Y - TEXT_SIZE);
+            _health.Position = new Vector2f(2 * TEXT_SIZE, window.Size.Y - TEXT_SIZE - TEXT_SIZE / 4);
             _score = new Text();
             SetText(_score, "Score : 0");
             SetTextDefaultSettings(_score);
-            _score.Position = new Vector2f(window.Size.X / 2, window.Size.Y - TEXT_SIZE);
+            _score.Position = new Vector2f(window.Size.X / 2, window.Size.Y - TEXT_SIZE - TEXT_SIZE / 4);
             if (NEED_BAR)
                 AddBar();
             AddHPIcon();

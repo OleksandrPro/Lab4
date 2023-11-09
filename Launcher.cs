@@ -18,16 +18,16 @@ namespace Lab4
         }        
         static void Main()
         {                      
-            RenderWindow MainWindow = new RenderWindow(new VideoMode(1300, 1000), "Yonko's adventures");
+            RenderWindow MainWindow = new RenderWindow(new VideoMode(1300, 1000), "Yonko Adventures");
             MainWindow.SetFramerateLimit(60);
             MainWindow.Closed += new EventHandler(OnClose);
 
             View visual = new View(MainWindow);
             Model model = new Model();
-            Controller controller = new Controller(visual, model);
+            IControllerLaunch controller = new Controller(visual, model);
 
-            visual.AddController(controller);
-            model.AddController(controller);
+            visual.AddController((Controller)controller);
+            model.AddController((Controller)controller);
             controller.RenderLevel();            
 
             while (MainWindow.IsOpen)

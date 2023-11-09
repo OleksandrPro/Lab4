@@ -15,29 +15,13 @@ namespace Lab4
         {
             _playerStateMachine = psm;
         }
-        public override void Enter()
-        {
-            Console.WriteLine("player is in MovingRight state");
-        }
-        public override void Exit()
-        {
-            Console.WriteLine("player exits MovingRight state");
-        }
         public override void Move()
         {
             _playerStateMachine.player.X += Model.HORIZONTAL_UNIT_SIZE * _movementCoeffcientX;
         }
-        public override void BackToMoving()
-        {
-
-        }
         public override void BackToIdle()
         {
             _playerStateMachine.EnterIn<IdleRight>();
-        }
-        public override void GoToOppositeMovingDirection()
-        {
-            _playerStateMachine.EnterIn<MovingLeft>();
         }
     }
 }

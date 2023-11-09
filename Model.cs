@@ -10,11 +10,12 @@ namespace Lab4
     {
         private Controller _controller;
 
-        public Level currentLevel;
+        private Level _currentLevel;
+        public Level CurrentLevel { get { return _currentLevel; } private set { _currentLevel = value; } } 
         private ObjectPool<FallingObject> _fallingObjects;
         private ObjectPool<FallingObject> _fallingScoreObjects;
-        public List<FallingObject> SpawnedObjects;
-        public List<FallingObject> SpawnedScoreObjects;
+        public List<FallingObject> SpawnedObjects { get; private set; }
+        public List<FallingObject> SpawnedScoreObjects { get; private set; }
 
         public const int HORIZONTAL_UNIT_SIZE = 10;
         public const int VERTICAL_UNIT_SIZE = 250;
@@ -46,7 +47,7 @@ namespace Lab4
 
         public Model()
         {
-            currentLevel = new Level1();
+            _currentLevel = new Level1();
             _fallingObjects = new ObjectPool<FallingObject>(INITIAL_NUMBER_OF_FALLING_OBJECTS);
             _fallingScoreObjects = new ObjectPool<FallingObject>(INITIAL_NUMBER_OF_FALLING_SCORE_OBJECTS);
             SpawnedObjects = new List<FallingObject>();

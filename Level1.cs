@@ -10,7 +10,7 @@ namespace Lab4
     {
         public Level1()
         {
-            player = new Player(500, 150, 50, 150);
+            player = new Player(500, 150);
             platforms = new List<Platform> ();
             barrier = new List<SFML.Graphics.FloatRect> ();
             AddPlatform(0, 350, 1300, 50);
