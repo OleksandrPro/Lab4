@@ -1,12 +1,9 @@
 ﻿using SFML.Graphics;
 using SFML.System;
-using SFML.Window;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Lab4
 {
@@ -30,7 +27,6 @@ namespace Lab4
         private Dictionary<Type, LinkedList<Sprite>> _stateAnimationPairs;
         private UI _UI;
 
-        private const string _folderPathSingleSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\newPlaceholder.png";
         private const string _folderPathFireBallSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\fireball2.png";
         private const string _folderPathFloorSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\floor.png";
         private const string _folderPathMeatSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\meat.png";

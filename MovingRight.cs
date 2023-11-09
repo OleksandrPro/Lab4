@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Lab4
+﻿namespace Lab4
 {
-    internal class MovingRight : PlayerState
+    public class MovingRight : PlayerState
     {
         private int _movementCoeffcientX = 1;
         public override int MovementCoeffcientX { get { return _movementCoeffcientX; } }
