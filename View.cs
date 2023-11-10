@@ -4,10 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static Lab4.Model;
 
 namespace Lab4
 {
-    public class View : IPositionChangeObserver
+    public class View : IPositionChangeObserver, ISpawnNewObjectObserver, IDespawnObjectObserver
     {
         public RenderWindow GameWindow { get; private set; }
         private IControllerView _controller;
@@ -15,15 +16,15 @@ namespace Lab4
         public Sprite CurrentPlayerModel;
         private List<Sprite> Platforms;
 
-        private List<Sprite> FallingObjects;
+        private List<Sprite> FallingDamageObjects;
         private List<Sprite> FallingScoreObjects;
 
-        private LinkedList<Sprite> _currentAnimation;
-        private LinkedList<Sprite> _idleRightAnimation;
-        private LinkedList<Sprite> _idleLeftAnimation;
-        private LinkedList<Sprite> _movingRightAnimation;
-        private LinkedList<Sprite> _movingLeftAnimation;
-        private Dictionary<Type, LinkedList<Sprite>> _stateAnimationPairs;
+        private CycledLinkedList<Sprite> _currentAnimation;
+        private CycledLinkedList<Sprite> _idleRightAnimation;
+        private CycledLinkedList<Sprite> _idleLeftAnimation;
+        private CycledLinkedList<Sprite> _movingRightAnimation;
+        private CycledLinkedList<Sprite> _movingLeftAnimation;
+        private Dictionary<Type, CycledLinkedList<Sprite>> _stateAnimationPairs;
         private UI _UI;
         public UI UI { get { return _UI; } }
 
@@ -44,20 +45,20 @@ namespace Lab4
             GameWindow = window;
 
             Platforms = new List<Sprite>();
-            FallingObjects = new List<Sprite>();
+            FallingDamageObjects = new List<Sprite>();
             FallingScoreObjects = new List<Sprite>();
 
-            _idleRightAnimation = new LinkedList<Sprite>();
-            _idleLeftAnimation = new LinkedList<Sprite>();
-            _movingRightAnimation = new LinkedList<Sprite>();
-            _movingLeftAnimation = new LinkedList<Sprite>();
+            _idleRightAnimation = new CycledLinkedList<Sprite>();
+            _idleLeftAnimation = new CycledLinkedList<Sprite>();
+            _movingRightAnimation = new CycledLinkedList<Sprite>();
+            _movingLeftAnimation = new CycledLinkedList<Sprite>();
 
             FillAnimationList(_idleRightAnimation, _folderPathIdleRight);
             FillAnimationList(_idleLeftAnimation, _folderPathIdleLeft);
             FillAnimationList(_movingRightAnimation, _folderPathMovingRight);
             FillAnimationList(_movingLeftAnimation, _folderPathMovingLeft);
 
-            _stateAnimationPairs = new Dictionary<Type, LinkedList<Sprite>>()
+            _stateAnimationPairs = new Dictionary<Type, CycledLinkedList<Sprite>>()
             {
                 [typeof(IdleRight)] = _idleRightAnimation,
                 [typeof(IdleLeft)] = _idleLeftAnimation,
@@ -79,7 +80,7 @@ namespace Lab4
             {
                 GameWindow.Draw(p);
             }
-            foreach (var g in FallingObjects)
+            foreach (var g in FallingDamageObjects)
             {
                 GameWindow.Draw(g);
             }
@@ -135,7 +136,7 @@ namespace Lab4
             CurrentPlayerModel = _currentAnimation.GetCurrent();
             CurrentPlayerModel.Position = currentPos;
         }
-        private void FillAnimationList(LinkedList<Sprite> list, string path)
+        private void FillAnimationList(CycledLinkedList<Sprite> list, string path)
         {
             if (Directory.Exists(path))
             {
@@ -164,15 +165,22 @@ namespace Lab4
             _controller.AddBarrier(windowX, 0, barrierSize, windowY);
             //xywh
         }
-        public void AddFallingObject(FallingObject fObj)
+        public void UpdateSpawn(Model.FallingObjectTypes type, FallingObject fObj)
+        {
+            if (type == FallingObjectTypes.DamageObject)
+                AddDamageObject(fObj);
+            if (type == FallingObjectTypes.ScoreObject)
+                AddScoreObject(fObj);
+        }
+        private void AddDamageObject(FallingObject fObj)
         {
             Texture model = new Texture(_folderPathFireBallSprite);
             Sprite newFObjSprite = new Sprite(model);
             newFObjSprite.Position = new Vector2f(fObj.X, fObj.Y);
-            FallingObjects.Add(newFObjSprite);
+            FallingDamageObjects.Add(newFObjSprite);
             _controller.AddFallingObjectCollider(fObj, newFObjSprite.GetGlobalBounds());
         }
-        public void AddFallingScoreObject(FallingObject fObj)
+        private void AddScoreObject(FallingObject fObj)
         {
             Texture model = new Texture(_folderPathMeatSprite);
             Sprite newFObjSprite = new Sprite(model);
@@ -180,12 +188,19 @@ namespace Lab4
             FallingScoreObjects.Add(newFObjSprite);
             _controller.AddFallingObjectCollider(fObj, newFObjSprite.GetGlobalBounds());
         }
-        public void RemoveFallingObjectSprite(int x, int y)
+        public void UpdateDespawn(FallingObjectTypes type, FallingObject fobj)
         {
-            Sprite toRemove = FallingObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
-            FallingObjects.Remove(toRemove);
+            if (type == FallingObjectTypes.DamageObject)
+                RemoveDamageObjectSprite(fobj.X, fobj.Y);
+            if (type == FallingObjectTypes.ScoreObject)
+                RemoveScoreObjectSprite(fobj.X, fobj.Y);
         }
-        public void RemoveFallingScoreObjectSprite(int x, int y)
+        private void RemoveDamageObjectSprite(int x, int y)
+        {
+            Sprite toRemove = FallingDamageObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
+            FallingDamageObjects.Remove(toRemove);
+        }
+        private void RemoveScoreObjectSprite(int x, int y)
         {
             Sprite toRemove = FallingScoreObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
             FallingScoreObjects.Remove(toRemove);
@@ -201,7 +216,7 @@ namespace Lab4
         }
         public void UpdateFallingObjectPosition(int y)
         {
-            UpdatePositionForCollection(y, FallingObjects);
+            UpdatePositionForCollection(y, FallingDamageObjects);
             UpdatePositionForCollection(y, FallingScoreObjects);
         }
         private void UpdatePositionForCollection(int y, List<Sprite> list)

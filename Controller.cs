@@ -35,18 +35,21 @@ namespace Lab4
 
             _random = new Random();
             _fallingObjectsTimer = new Timer(Model.FALLING_OBJECT_SPAWN_TIME);
-            _fallingObjectsTimer.Elapsed += SpawnFallingObject;
+            _fallingObjectsTimer.Elapsed += SpawnDamageObject;
             _fallingScoreObjectsTimer = new Timer(Model.FALLING_SCORE_OBJECT_SPAWN_TIME);
-            _fallingScoreObjectsTimer.Elapsed += SpawnFallingScoreObject;
+            _fallingScoreObjectsTimer.Elapsed += SpawnScoreObject;
 
             _player = model.CurrentLevel.player;
             _currentLevel = model.CurrentLevel;
 
-            _player.Attach(_view);
-            _player.Attach((IHealthEventObserver)_view.UI);
+            _player.Attach((IPositionChangeObserver)_view);            
             _player.Attach((IPositionChangeObserver)this);
             _player.Attach((IStateObserver)this);
+            _player.Attach((IHealthEventObserver)_view.UI);
 
+
+            _model.Attach((ISpawnNewObjectObserver)_view);
+            _model.Attach((IDespawnObjectObserver)_view);
             _model.Attach((IScoreUpdateObserver)_view.UI);
 
             _player.Died += EndGame;
@@ -125,17 +128,15 @@ namespace Lab4
             }
             MovePlayerHorizontal();
         }
-        private void SpawnFallingObject(Object source, ElapsedEventArgs e)
+        private void SpawnDamageObject(Object source, ElapsedEventArgs e)
         {
             int randomObjPos = _random.Next(0, 1250);
-            FallingObject fObj = _model.SpawnFallingObject(randomObjPos, 0);
-            _view.AddFallingObject(fObj);
+            _model.SpawnFallingObject(Model.FallingObjectTypes.DamageObject, randomObjPos, 0);
         }
-        private void SpawnFallingScoreObject(Object source, ElapsedEventArgs e)
+        private void SpawnScoreObject(Object source, ElapsedEventArgs e)
         {
             int randomObjPos = _random.Next(0, 1250);
-            FallingObject fObj = _model.SpawnFallingScoreObject(randomObjPos, 0);
-            _view.AddFallingScoreObject(fObj);
+            _model.SpawnFallingObject(Model.FallingObjectTypes.ScoreObject, randomObjPos, 0);
         }
         public FloatRect GetColiderOfModel()
         {
@@ -207,13 +208,10 @@ namespace Lab4
         }
         private void CheckDamageObjectsCollision()
         {
-            FallingObject fObj = CheckGameObjectsCollision(_model.SpawnedObjects);
+            FallingObject fObj = CheckGameObjectsCollision(_model.SpawnedDamageObjects);
             if(fObj!=null)
             {
-                int x = fObj.X;
-                int y = fObj.Y;
-                _model.DespawnFallingObject(fObj);
-                _view.RemoveFallingObjectSprite(x, y);
+                _model.DespawnFallingObject(Model.FallingObjectTypes.DamageObject, fObj);
                 _player.ApplyDamage();
             }
         }
@@ -222,10 +220,7 @@ namespace Lab4
             FallingObject fObj = CheckGameObjectsCollision(_model.SpawnedScoreObjects);
             if (fObj != null)
             {
-                int x = fObj.X;
-                int y = fObj.Y;
-                _model.DespawnFallingScoreObject(fObj);
-                _view.RemoveFallingScoreObjectSprite(x, y);
+                _model.DespawnFallingObject(Model.FallingObjectTypes.ScoreObject, fObj);
                 _model.AddScore();
             }
         }
@@ -256,7 +251,6 @@ namespace Lab4
             foreach (var item in list)
             {
                 item.IncreaseVerticalSpeed(Model.OBJECT_FALLING_SPEED);
-                item.UpdateColliderPosition();
                 if (item.Y >= _view.GameWindow.Size.Y)
                 {
                     toDestroy = item;
@@ -268,16 +262,15 @@ namespace Lab4
         {
             CheckDamageObjectsCollision();
             CheckScoreObjectsCollision();
-            FallingObject toDestroy = UpdateFallingObjectsPossition(_model.SpawnedObjects);
+            FallingObject toDestroy = UpdateFallingObjectsPossition(_model.SpawnedDamageObjects);
             if (toDestroy != null)
             {
-                _model.DespawnFallingObject(toDestroy);                
+                _model.DespawnFallingObject(Model.FallingObjectTypes.DamageObject, toDestroy);                
             }
-
             toDestroy = UpdateFallingObjectsPossition(_model.SpawnedScoreObjects);
             if (toDestroy != null)
             {
-                _model.DespawnFallingScoreObject(toDestroy);
+                _model.DespawnFallingObject(Model.FallingObjectTypes.ScoreObject, toDestroy);
             }
             _view.UpdateFallingObjectPosition(Model.OBJECT_FALLING_SPEED);
         }

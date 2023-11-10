@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Lab4
 {
-    public class Model : IScoreUpdate
+    public class Model : IScoreUpdate, ISpawnNewObject, IDespawnObject
     {
         private Controller _controller;
 
@@ -12,8 +12,10 @@ namespace Lab4
         public Level CurrentLevel { get { return _currentLevel; } private set { _currentLevel = value; } } 
         private ObjectPool<FallingObject> _fallingObjects;
         private ObjectPool<FallingObject> _fallingScoreObjects;
-        public List<FallingObject> SpawnedObjects { get; private set; }
+        public List<FallingObject> SpawnedDamageObjects { get; private set; }
         public List<FallingObject> SpawnedScoreObjects { get; private set; }
+        private List<ISpawnNewObjectObserver> _spawnNewObjectObservers = new List<ISpawnNewObjectObserver>();
+        private List<IDespawnObjectObserver> _despawnNewObjectObservers = new List<IDespawnObjectObserver>();
         private List<IScoreUpdateObserver> _scoreUpdateObservers = new List<IScoreUpdateObserver>();
 
         public const int HORIZONTAL_UNIT_SIZE = 10;
@@ -48,9 +50,28 @@ namespace Lab4
             _currentLevel = new Level1();
             _fallingObjects = new ObjectPool<FallingObject>(INITIAL_NUMBER_OF_FALLING_OBJECTS);
             _fallingScoreObjects = new ObjectPool<FallingObject>(INITIAL_NUMBER_OF_FALLING_SCORE_OBJECTS);
-            SpawnedObjects = new List<FallingObject>();
+            SpawnedDamageObjects = new List<FallingObject>();
             SpawnedScoreObjects = new List<FallingObject>();
             Score = 0;
+        }
+        public enum FallingObjectTypes
+        {
+            DamageObject, ScoreObject
+        }
+        public void Attach(ISpawnNewObjectObserver observer)
+        {
+            _spawnNewObjectObservers.Add(observer);
+        }
+        public void Detach(ISpawnNewObjectObserver observer)
+        {
+            _spawnNewObjectObservers.Remove(observer);
+        }
+        public void SpawnNewObjectNotify(Model.FallingObjectTypes type, FallingObject newFObj)
+        {
+            foreach (var observer in _spawnNewObjectObservers)
+            {
+                observer.UpdateSpawn(type, newFObj);
+            }
         }
         public void Attach(IScoreUpdateObserver observer)
         {
@@ -86,25 +107,58 @@ namespace Lab4
             obj.SetPosition(0, 0);
             pool.Release(toRemove);
         }
-        public FallingObject SpawnFallingObject(int x, int y)
+        public void SpawnFallingObject(FallingObjectTypes type, int x, int y)
         {
-            return TemplateSpawn(_fallingObjects, x, y, SpawnedObjects);
+            if (type == FallingObjectTypes.DamageObject)
+                SpawnDamageObject(x, y);
+            if (type == FallingObjectTypes.ScoreObject)
+                SpawnScoreObject(x, y);
         }
-        public void DespawnFallingObject(FallingObject obj)
+        public void SpawnDamageObject(int x, int y)
         {
-            TemplateDespawn(obj, _fallingObjects, SpawnedObjects);
-        }        
-        public FallingObject SpawnFallingScoreObject(int x, int y)
-        {
-            return TemplateSpawn(_fallingScoreObjects, x, y, SpawnedScoreObjects);
+            FallingObject newFObj = TemplateSpawn(_fallingObjects, x, y, SpawnedDamageObjects);
+            SpawnNewObjectNotify(FallingObjectTypes.DamageObject, newFObj);
         }
-        public void DespawnFallingScoreObject(FallingObject obj)
+        public void SpawnScoreObject(int x, int y)
         {
-            TemplateDespawn(obj, _fallingScoreObjects, SpawnedScoreObjects);
+            FallingObject newFObj = TemplateSpawn(_fallingScoreObjects, x, y, SpawnedScoreObjects);
+            SpawnNewObjectNotify(FallingObjectTypes.ScoreObject, newFObj);
+        }
+        public void DespawnFallingObject(FallingObjectTypes type, FallingObject obj)
+        {
+            if (type == FallingObjectTypes.DamageObject)
+                DespawnDamageObject(obj);
+            if (type == FallingObjectTypes.ScoreObject)
+                DespawnScoreObject(obj);
+        }
+        private void DespawnDamageObject(FallingObject obj)
+        {
+            DespawnObjectNotify(FallingObjectTypes.DamageObject, obj);
+            TemplateDespawn(obj, _fallingObjects, SpawnedDamageObjects);            
+        }       
+        private void DespawnScoreObject(FallingObject obj)
+        {
+            DespawnObjectNotify(FallingObjectTypes.ScoreObject, obj);
+            TemplateDespawn(obj, _fallingScoreObjects, SpawnedScoreObjects);            
         }
         public void AddScore()
         {
             Score += POINTS_PER_ITEM;
+        }
+        public void Attach(IDespawnObjectObserver observer)
+        {
+            _despawnNewObjectObservers.Add(observer);
+        }
+        public void Detach(IDespawnObjectObserver observer)
+        {
+            _despawnNewObjectObservers.Remove(observer);
+        }
+        public void DespawnObjectNotify(Model.FallingObjectTypes type, FallingObject newFObj)
+        {
+            foreach (var observer in _despawnNewObjectObservers)
+            {
+                observer.UpdateDespawn(type, newFObj);
+            }
         }
     }
 }
