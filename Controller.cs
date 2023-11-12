@@ -6,7 +6,7 @@ using System.Timers;
 
 namespace Lab4
 {
-    public class Controller : IControllerLaunch, IControllerView, IPositionChangeObserver, IStateObserver
+    public class Controller : IControllerLaunch, IControllerView, IPositionChangeObserver, IStateObserver, IDeathObserver
     {
         private View _view;
         private Model _model;
@@ -28,34 +28,60 @@ namespace Lab4
         public Controller(View view, Model model)
         {
             _view = view;
-            _model = model;
-            view.GameWindow.KeyPressed += OnKeyPressedHorizontal;
-            view.GameWindow.KeyReleased += OnKeyReleasedHorizontal;
-            view.GameWindow.KeyPressed += OnKeyPressedVertical;
+            _model = model;            
 
             _random = new Random();
             _fallingObjectsTimer = new Timer(Model.FALLING_OBJECT_SPAWN_TIME);
-            _fallingObjectsTimer.Elapsed += SpawnDamageObject;
             _fallingScoreObjectsTimer = new Timer(Model.FALLING_SCORE_OBJECT_SPAWN_TIME);
-            _fallingScoreObjectsTimer.Elapsed += SpawnScoreObject;
 
             _player = model.CurrentLevel.player;
-            _currentLevel = model.CurrentLevel;
+            _currentLevel = model.CurrentLevel;            
 
-            _player.Attach((IPositionChangeObserver)_view);            
+            _fallingObjectsTimer.Enabled = true;
+            _fallingScoreObjectsTimer.Enabled = true;
+
+            InitializeEventSubscriptions(_view, _model);
+        }
+        private void InitializeEventSubscriptions(View view, Model model)
+        {
+            _view.GameWindow.KeyPressed += OnKeyPressedHorizontal;
+            _view.GameWindow.KeyReleased += OnKeyReleasedHorizontal;
+            _view.GameWindow.KeyPressed += OnKeyPressedVertical;
+
+            _fallingObjectsTimer.Elapsed += SpawnDamageObject;
+            _fallingScoreObjectsTimer.Elapsed += SpawnScoreObject;
+
+            _player.Attach((IPositionChangeObserver)_view);
             _player.Attach((IPositionChangeObserver)this);
             _player.Attach((IStateObserver)this);
             _player.Attach((IHealthEventObserver)_view.UI);
-
+            
+            _player.Attach((IDeathObserver)_view.UI);
+            _player.Attach((IDeathObserver)this);
 
             _model.Attach((ISpawnNewObjectObserver)_view);
             _model.Attach((IDespawnObjectObserver)_view);
             _model.Attach((IScoreUpdateObserver)_view.UI);
+        }
+        private void UnsubscribeFromEvents()
+        {
+            _view.GameWindow.KeyPressed -= OnKeyPressedHorizontal;
+            _view.GameWindow.KeyReleased -= OnKeyReleasedHorizontal;
+            _view.GameWindow.KeyPressed -= OnKeyPressedVertical;
 
-            _player.Died += EndGame;
+            _fallingObjectsTimer.Elapsed -= SpawnDamageObject;
+            _fallingScoreObjectsTimer.Elapsed -= SpawnScoreObject;
 
-            _fallingObjectsTimer.Enabled = true;
-            _fallingScoreObjectsTimer.Enabled = true;
+            _player.Detach((IPositionChangeObserver)_view);
+            _player.Detach((IPositionChangeObserver)this);
+            _player.Detach((IStateObserver)this);
+            _player.Detach((IHealthEventObserver)_view.UI);
+            _player.Detach((IDeathObserver)this);
+            _player.Detach((IDeathObserver)_view.UI);
+
+            _model.Detach((ISpawnNewObjectObserver)_view);
+            _model.Detach((IDespawnObjectObserver)_view);
+            _model.Detach((IScoreUpdateObserver)_view.UI);
         }
         public void OnKeyPressedHorizontal(object sender, EventArgs e)
         {
@@ -274,13 +300,15 @@ namespace Lab4
             }
             _view.UpdateFallingObjectPosition(Model.OBJECT_FALLING_SPEED);
         }
-        public void EndGame(object sender, EventArgs e)
-        {
-            _isNotGameOver = false;            
-        }
         public void ShowFinalResult()
         {
             _view.SetEndGameScreen();
+        }
+        public void Update(IDied subject)
+        {
+            _isNotGameOver = false;
+            _player.BackToIdle();
+            UnsubscribeFromEvents();
         }
     }
 }

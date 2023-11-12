@@ -26,20 +26,13 @@ namespace Lab4
             controller.RenderLevel();            
 
             while (MainWindow.IsOpen)
-            {
-                if (!controller.IsNotGameOver)
-                {
-                    break;
-                }
+            {                
                 MainWindow.DispatchEvents();
                 controller.MovementHandler();
                 controller.Update();
                 visual.DrawScene();
             }
-            while (MainWindow.IsOpen)
-            {
-                controller.ShowFinalResult();
-            }
+
             //while (MainWindow.IsOpen)
             //{
             //    //second way

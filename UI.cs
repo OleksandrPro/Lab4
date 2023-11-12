@@ -3,7 +3,7 @@ using SFML.System;
 
 namespace Lab4
 {
-    public class UI : IHealthEventObserver, IScoreUpdateObserver
+    public class UI : IHealthEventObserver, IScoreUpdateObserver, IDeathObserver
     {
         private RenderWindow _window;
         private Font _font;
@@ -75,7 +75,7 @@ namespace Lab4
             SetTextDefaultSettings(finalText);
             finalText.Position = new Vector2f(_window.Size.X / 3, _window.Size.Y / 3);
             _score.Position = new Vector2f(finalText.Position.X, finalText.Position.Y + TEXT_SIZE * 2);
-            _window.Draw(finalText);
+//            _window.Draw(finalText);
             _window.Draw(_score);
             _window.Display();
         }
@@ -89,6 +89,11 @@ namespace Lab4
         {
             Model model = subject as Model;
             SetText(_score, "Score : " + model.Score.ToString());
+        }
+        public void Update(IDied subject)
+        {
+            Player player = subject as Player;
+            CreateEndGameScreen();
         }
     }
 }

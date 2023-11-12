@@ -1,10 +1,11 @@
 ﻿using SFML.Graphics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Lab4
 {
-    public class Player : IHealthEvents, IStateUpdate, IPositionChanged
+    public class Player : IHealthEvents, IStateUpdate, IPositionChanged, IDied
     {
         private int _x;
         private int _y;
@@ -21,7 +22,7 @@ namespace Lab4
                 _health = value;
                 HealthEventNotify();
                 if (_health == 0)
-                    Died?.Invoke(this, new EventArgs());
+                    DiedNotify();
             }
         }
         public FloatRect Collider { get; set; }
@@ -75,10 +76,8 @@ namespace Lab4
         private List<IPositionChangeObserver> _positionChangeObservers = new List<IPositionChangeObserver>();
         private List<IHealthEventObserver> _healthEventObservers = new List<IHealthEventObserver>();
         private List<IStateObserver> _stateEventObservers = new List<IStateObserver>();
+        private List<IDeathObserver> _deathEventObservers = new List<IDeathObserver>();
 
-        public delegate void HealthChange(object sender, EventArgs e);
-        public event HealthChange HealthChanged;
-        public event HealthChange Died;
         public Player(int x, int y, int health)
         {
             if (health <= 0)
@@ -136,6 +135,22 @@ namespace Lab4
             {
                 observer.Update(this);
             }            
+        }
+        public void Attach(IDeathObserver observer)
+        {
+            _deathEventObservers.Add(observer);
+        }
+        public void Detach(IDeathObserver observer)
+        {
+            _deathEventObservers.Remove(observer);
+        }
+        public void DiedNotify()
+        {
+            for (int i = 0; i < _deathEventObservers.Count; i++)
+            {
+                var observer = _deathEventObservers[i];
+                observer.Update(this);
+            }
         }
         public void ChangeState<TypeOfState>() where TypeOfState : IPlayerState
         {
