@@ -28,31 +28,46 @@ namespace Lab4
         public Controller(View view, Model model)
         {
             _view = view;
-            _model = model;
-            view.GameWindow.KeyPressed += OnKeyPressedHorizontal;
-            view.GameWindow.KeyReleased += OnKeyReleasedHorizontal;
-            view.GameWindow.KeyPressed += OnKeyPressedVertical;
+            _model = model;            
 
             _random = new Random();
-            _fallingObjectsTimer = new Timer(Model.FALLING_OBJECT_SPAWN_TIME);
-            _fallingObjectsTimer.Elapsed += SpawnFallingObject;
-            _fallingScoreObjectsTimer = new Timer(Model.FALLING_SCORE_OBJECT_SPAWN_TIME);
-            _fallingScoreObjectsTimer.Elapsed += SpawnFallingScoreObject;
+            _fallingObjectsTimer = new Timer(Model.FALLING_OBJECT_SPAWN_TIME);            
+            _fallingScoreObjectsTimer = new Timer(Model.FALLING_SCORE_OBJECT_SPAWN_TIME);            
 
             _player = model.CurrentLevel.player;
-            _currentLevel = model.CurrentLevel;
+            _currentLevel = model.CurrentLevel;            
 
+            _fallingObjectsTimer.Enabled = true;
+            _fallingScoreObjectsTimer.Enabled = true;
+            InitializeEventSubscriptions(_view, _model);
+        }
+        private void InitializeEventSubscriptions(View view, Model model)
+        {
+            _view.GameWindow.KeyPressed += OnKeyPressedHorizontal;
+            _view.GameWindow.KeyReleased += OnKeyReleasedHorizontal;
+            _view.GameWindow.KeyPressed += OnKeyPressedVertical;
+            _fallingObjectsTimer.Elapsed += SpawnFallingObject;
+            _fallingScoreObjectsTimer.Elapsed += SpawnFallingScoreObject;
             _player.Attach(_view);
             _player.Attach((IHealthEventObserver)_view.UI);
             _player.Attach((IPositionChangeObserver)this);
             _player.Attach((IStateObserver)this);
-
             _model.Attach((IScoreUpdateObserver)_view.UI);
-
             _player.Died += EndGame;
-
-            _fallingObjectsTimer.Enabled = true;
-            _fallingScoreObjectsTimer.Enabled = true;
+        }
+        private void UnsubscribeFromEvents()
+        {
+            _view.GameWindow.KeyPressed -= OnKeyPressedHorizontal;
+            _view.GameWindow.KeyReleased -= OnKeyReleasedHorizontal;
+            _view.GameWindow.KeyPressed -= OnKeyPressedVertical;
+            _fallingObjectsTimer.Elapsed -= SpawnFallingObject;
+            _fallingScoreObjectsTimer.Elapsed -= SpawnFallingScoreObject;
+            _player.Detach(_view);
+            _player.Detach((IHealthEventObserver)_view.UI);
+            _player.Detach((IPositionChangeObserver)this);
+            _player.Detach((IStateObserver)this);
+            _model.Detach((IScoreUpdateObserver)_view.UI);
+            _player.Died -= EndGame;
         }
         public void OnKeyPressedHorizontal(object sender, EventArgs e)
         {
@@ -283,10 +298,9 @@ namespace Lab4
         }
         public void EndGame(object sender, EventArgs e)
         {
-            _isNotGameOver = false;            
-        }
-        public void ShowFinalResult()
-        {
+            _isNotGameOver = false;
+            _player.BackToIdle();
+            UnsubscribeFromEvents();
             _view.SetEndGameScreen();
         }
     }

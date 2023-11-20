@@ -27,38 +27,11 @@ namespace Lab4
 
             while (MainWindow.IsOpen)
             {
-                if (!controller.IsNotGameOver)
-                {
-                    break;
-                }
                 MainWindow.DispatchEvents();
                 controller.MovementHandler();
                 controller.Update();
                 visual.DrawScene();
-            }
-            while (MainWindow.IsOpen)
-            {
-                controller.ShowFinalResult();
-            }
-            //while (MainWindow.IsOpen)
-            //{
-            //    //second way
-            //    if (controller.IsNotGameOver)
-            //    {
-            //        MainWindow.DispatchEvents();
-            //        controller.MovementHandler();
-            //    }
-            //    if (!controller.IsNotGameOver)
-            //    {
-            //        controller.ShowFinalResult();
-            //    }
-            //    else
-            //    {
-            //        controller.Update();
-            //        visual.DrawScene();
-            //    }
-
-            //}
+            }          
         }
     }
 }

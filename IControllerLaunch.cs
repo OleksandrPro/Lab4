@@ -6,6 +6,5 @@
         void MovementHandler();
         void RenderLevel();
         void Update();
-        void ShowFinalResult();
     }
 }
