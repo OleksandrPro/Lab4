@@ -4,14 +4,23 @@ using System.Linq;
 
 namespace Lab4
 {
-    public class Model : IScoreUpdate, ISpawnNewObject, IDespawnObject
+    public class Model : IModel, IScoreUpdate, ISpawnNewObject, IDespawnObject
     {
         private Controller _controller;
 
-        private Level _currentLevel;
-        public Level CurrentLevel { get { return _currentLevel; } private set { _currentLevel = value; } } 
-        private ObjectPool<FallingObject> _fallingObjects;
+        public ILevel CurrentLevel { get; set; }
+        private ObjectPool<FallingObject> _fallingDamageObjects;
         private ObjectPool<FallingObject> _fallingScoreObjects;
+        public ObjectPool<FallingObject> FallingDamageObjects 
+        { 
+            get { return _fallingDamageObjects; }
+            private set { _fallingDamageObjects = value; }
+        }
+        public ObjectPool<FallingObject> FallingScoreObjects 
+        { 
+            get { return _fallingScoreObjects; }
+            private set { _fallingScoreObjects = value; }
+        }
         public List<FallingObject> SpawnedDamageObjects { get; private set; }
         public List<FallingObject> SpawnedScoreObjects { get; private set; }
         private List<ISpawnNewObjectObserver> _spawnNewObjectObservers = new List<ISpawnNewObjectObserver>();
@@ -47,8 +56,8 @@ namespace Lab4
         }
         public Model()
         {
-            _currentLevel = new Level1();
-            _fallingObjects = new ObjectPool<FallingObject>(INITIAL_NUMBER_OF_FALLING_OBJECTS);
+            CurrentLevel = new Level1();
+            _fallingDamageObjects = new ObjectPool<FallingObject>(INITIAL_NUMBER_OF_FALLING_OBJECTS);
             _fallingScoreObjects = new ObjectPool<FallingObject>(INITIAL_NUMBER_OF_FALLING_SCORE_OBJECTS);
             SpawnedDamageObjects = new List<FallingObject>();
             SpawnedScoreObjects = new List<FallingObject>();
@@ -114,12 +123,12 @@ namespace Lab4
             if (type == FallingObjectTypes.ScoreObject)
                 SpawnScoreObject(x, y);
         }
-        public void SpawnDamageObject(int x, int y)
+        private void SpawnDamageObject(int x, int y)
         {
-            FallingObject newFObj = TemplateSpawn(_fallingObjects, x, y, SpawnedDamageObjects);
+            FallingObject newFObj = TemplateSpawn(_fallingDamageObjects, x, y, SpawnedDamageObjects);
             SpawnNewObjectNotify(FallingObjectTypes.DamageObject, newFObj);
         }
-        public void SpawnScoreObject(int x, int y)
+        private void SpawnScoreObject(int x, int y)
         {
             FallingObject newFObj = TemplateSpawn(_fallingScoreObjects, x, y, SpawnedScoreObjects);
             SpawnNewObjectNotify(FallingObjectTypes.ScoreObject, newFObj);
@@ -134,7 +143,7 @@ namespace Lab4
         private void DespawnDamageObject(FallingObject obj)
         {
             DespawnObjectNotify(FallingObjectTypes.DamageObject, obj);
-            TemplateDespawn(obj, _fallingObjects, SpawnedDamageObjects);            
+            TemplateDespawn(obj, _fallingDamageObjects, SpawnedDamageObjects);            
         }       
         private void DespawnScoreObject(FallingObject obj)
         {

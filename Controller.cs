@@ -2,20 +2,21 @@
 using SFML.Window;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Timers;
 
 namespace Lab4
 {
     public class Controller : IControllerLaunch, IControllerView, IPositionChangeObserver, IStateObserver, IDeathObserver
     {
-        private View _view;
-        private Model _model;
+        private IView _view;
+        private IModel _model;
 
         private Random _random;
         private Timer _fallingObjectsTimer;
         private Timer _fallingScoreObjectsTimer;
         private Player _player;
-        private Level _currentLevel;
+        public ILevel CurrentLevel;
 
         private bool isAKeyPressed = false;
         private bool isDKeyPressed = false;
@@ -25,7 +26,7 @@ namespace Lab4
             get { return _isNotGameOver; }
             set { _isNotGameOver = value; }
         }
-        public Controller(View view, Model model)
+        public Controller(IView view, IModel model)
         {
             _view = view;
             _model = model;            
@@ -34,34 +35,38 @@ namespace Lab4
             _fallingObjectsTimer = new Timer(Model.FALLING_OBJECT_SPAWN_TIME);
             _fallingScoreObjectsTimer = new Timer(Model.FALLING_SCORE_OBJECT_SPAWN_TIME);
 
-            _player = model.CurrentLevel.player;
-            _currentLevel = model.CurrentLevel;            
+            _player = model.CurrentLevel.Player;
+            CurrentLevel = model.CurrentLevel;            
 
             _fallingObjectsTimer.Enabled = true;
             _fallingScoreObjectsTimer.Enabled = true;
 
             InitializeEventSubscriptions(_view, _model);
         }
-        private void InitializeEventSubscriptions(View view, Model model)
+        private void InitializeEventSubscriptions(IView view, IModel model)
         {
-            _view.GameWindow.KeyPressed += OnKeyPressedHorizontal;
-            _view.GameWindow.KeyReleased += OnKeyReleasedHorizontal;
-            _view.GameWindow.KeyPressed += OnKeyPressedVertical;
+            if (view == null || model == null)
+            {
+                throw new NullReferenceException();
+            }
+            view.GameWindow.KeyPressed += OnKeyPressedHorizontal;
+            view.GameWindow.KeyReleased += OnKeyReleasedHorizontal;
+            view.GameWindow.KeyPressed += OnKeyPressedVertical;
 
             _fallingObjectsTimer.Elapsed += SpawnDamageObject;
             _fallingScoreObjectsTimer.Elapsed += SpawnScoreObject;
 
-            _player.Attach((IPositionChangeObserver)_view);
+            _player.Attach((IPositionChangeObserver)view);
             _player.Attach((IPositionChangeObserver)this);
             _player.Attach((IStateObserver)this);
-            _player.Attach((IHealthEventObserver)_view.UI);
-            
-            _player.Attach((IDeathObserver)_view.UI);
+            _player.Attach((IHealthEventObserver)view.UI);
+
+            _player.Attach((IDeathObserver)view.UI);
             _player.Attach((IDeathObserver)this);
 
-            _model.Attach((ISpawnNewObjectObserver)_view);
-            _model.Attach((IDespawnObjectObserver)_view);
-            _model.Attach((IScoreUpdateObserver)_view.UI);
+            ((ISpawnNewObject)model).Attach((ISpawnNewObjectObserver)view);
+            ((IDespawnObject)model).Attach((IDespawnObjectObserver)view);
+            ((IScoreUpdate)model).Attach((IScoreUpdateObserver)view.UI);
         }
         private void UnsubscribeFromEvents()
         {
@@ -79,9 +84,9 @@ namespace Lab4
             _player.Detach((IDeathObserver)this);
             _player.Detach((IDeathObserver)_view.UI);
 
-            _model.Detach((ISpawnNewObjectObserver)_view);
-            _model.Detach((IDespawnObjectObserver)_view);
-            _model.Detach((IScoreUpdateObserver)_view.UI);
+            ((ISpawnNewObject)_model).Detach((ISpawnNewObjectObserver)_view);
+            ((IDespawnObject)_model).Detach((IDespawnObjectObserver)_view);
+            ((IScoreUpdate)_model).Detach((IScoreUpdateObserver)_view.UI);
         }
         public void OnKeyPressedHorizontal(object sender, EventArgs e)
         {
@@ -200,7 +205,7 @@ namespace Lab4
         }
         private bool CheckPlayerPossibleCollision(FloatRect playerCollider)
         {
-            foreach (var item in _currentLevel.platforms)
+            foreach (var item in CurrentLevel.Platforms)
             {
                 bool willCollide = Engine.isIntersect(playerCollider, item.Collider);
                 if (willCollide)
@@ -208,7 +213,7 @@ namespace Lab4
                     return true;
                 }
             }
-            foreach (var item in _currentLevel.barrier)
+            foreach (var item in CurrentLevel.Barrier)
             {
                 bool willCollide = Engine.isIntersect(item, playerCollider);
                 if (willCollide)
@@ -252,7 +257,7 @@ namespace Lab4
         }
         public void RenderLevel()
         {
-            _view.LoadLevel(_currentLevel);
+            _view.LoadLevel(CurrentLevel);
         }
         public void AddPlayerCollider()
         {
@@ -264,7 +269,7 @@ namespace Lab4
         }
         public void AddBarrier(int x, int y, int height, int width)
         {
-            _currentLevel.barrier.Add(new FloatRect(x, y, height, width));
+            CurrentLevel.AddBarrier(x, y, height, width);
         }       
         public void AddFallingObjectCollider(FallingObject fObj, FloatRect collider)
         {

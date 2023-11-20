@@ -10,9 +10,6 @@ namespace Lab4
         public Player player;
         public Type State { get; private set; }
 
-        public delegate void StateChanged(object sender, EventArgs e);
-        public event StateChanged NewState;
-
         public PlayerStateMachine(Player player)
         {
             _states = new Dictionary<Type, IPlayerState>()
@@ -30,7 +27,7 @@ namespace Lab4
             {
                 _currentState = state;
                 State = state.GetType();
-                NewState?.Invoke(this, new EventArgs());
+                player.CurrentState = state;
             }
         } 
     }

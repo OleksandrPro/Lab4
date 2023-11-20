@@ -5,14 +5,14 @@ using System.Linq;
 
 namespace Lab4
 {
-    public class Player : IHealthEvents, IStateUpdate, IPositionChanged, IDied
+    public class Player : IMovable, IHealthEvents, IStateUpdate, IPositionChanged, IDied
     {
         private int _x;
         private int _y;
         private int _health;
         private IPlayerState _currentState;
-        public int Health 
-        { 
+        public int Health
+        {
             get
             {
                 return _health;
@@ -41,15 +41,15 @@ namespace Lab4
                     StateEventNotify();
                 }
             }
-        }       
+        }
         public Type StateType { get; private set; }
-        public int X 
-        {  
+        public int X
+        {
             get
             {
                 return _x;
             }
-            set
+            private set
             {
                 if (_x != value)
                 {
@@ -57,14 +57,14 @@ namespace Lab4
                     PositionChangeNotify();
                 }
             }
-        }
+        }        
         public int Y
         {
             get
             {
                 return _y;
             }
-            set
+            private set
             {
                 if (value != _y)
                 {
@@ -82,15 +82,18 @@ namespace Lab4
         {
             if (health <= 0)
                 throw new ArgumentException("HP can't be 0 or lower");
-            X = x;
-            Y = y;
+            _x = x;
+            _y = y;
             Health = health;
-            _states = new PlayerStateMachine(this);
-            
-            _states.NewState += NewStateHandler;
+            _states = new PlayerStateMachine(this);            
             _states.EnterIn<IdleRight>();
         }
         public Player(int x, int y) : this(x, y, Model.PLAYER_START_HEALTH) { }
+        public void Move(int x, int y)
+        {
+            X += x;
+            Y += y;
+        }
         public void Attach(IPositionChangeObserver observer)
         {
             _positionChangeObservers.Add(observer);
@@ -167,11 +170,11 @@ namespace Lab4
         }
         public void MoveHorizontal()
         {
-            CurrentState.Move();
+            CurrentState.MoveHorizontal();
         }
         public void MoveVertical(int y)
         {
-            Y += y;
+            Move(0, y);
         }
         public void BackToIdle()
         {

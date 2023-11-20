@@ -1,6 +1,6 @@
 ﻿namespace Lab4
 {
-    public class IdleLeft : IPlayerState
+    public class IdleLeft : IPlayerState, IMovable
     {
         private int _movementCoeffcientX = 0;
         public int MovementCoeffcientX { get { return _movementCoeffcientX; } }
@@ -9,13 +9,19 @@
         {
             _playerStateMachine = psm;
         }
-        public void Move()
+        public void MoveHorizontal()
         {
-            _playerStateMachine.player.X += Model.HORIZONTAL_UNIT_SIZE * _movementCoeffcientX;
+            Move(Model.HORIZONTAL_UNIT_SIZE * _movementCoeffcientX, 0);
         }
         public void BackToIdle()
         {
 
+        }
+        public void Move(int x, int y)
+        {
+            //            (_playerStateMachine.player as IMovable)?.Move(x, y);
+            IMovable player = _playerStateMachine.player as IMovable;
+            player.Move(x, y);
         }
     }
 }

@@ -8,16 +8,45 @@ using static Lab4.Model;
 
 namespace Lab4
 {
-    public class View : IPositionChangeObserver, ISpawnNewObjectObserver, IDespawnObjectObserver
+    public class View : IView, IPositionChangeObserver, ISpawnNewObjectObserver, IDespawnObjectObserver
     {
-        public RenderWindow GameWindow { get; private set; }
+        private RenderWindow _gameWindow;
+        public virtual RenderWindow GameWindow 
+        {
+            get
+            {
+                return _gameWindow;
+            }
+        }
         private IControllerView _controller;
 
-        public Sprite CurrentPlayerModel;
-        private List<Sprite> Platforms;
+        private Sprite _currentPlayerModel;
+        public Sprite CurrentPlayerModel
+        {
+            get
+            {
+                return _currentPlayerModel;
+            }
+            private set 
+            {
+                _currentPlayerModel = value;
+            }
+        }
+        private List<Sprite> _platforms;
+        public virtual List<Sprite> Platforms
+        {
+            get
+            {
+                return _platforms;
+            }
+            private set 
+            {
+                _platforms = value;
+            }
+        }
 
-        private List<Sprite> FallingDamageObjects;
-        private List<Sprite> FallingScoreObjects;
+        private List<Sprite> _fallingDamageObjects;
+        private List<Sprite> _fallingScoreObjects;
 
         private CycledLinkedList<Sprite> _currentAnimation;
         private CycledLinkedList<Sprite> _idleRightAnimation;
@@ -27,6 +56,16 @@ namespace Lab4
         private Dictionary<Type, CycledLinkedList<Sprite>> _stateAnimationPairs;
         private UI _UI;
         public UI UI { get { return _UI; } }
+
+        public List<Sprite> FallingDamageObjects { get { return _fallingDamageObjects; } }
+        public List<Sprite> FallingScoreObjects { get { return _fallingScoreObjects; } }
+
+        public CycledLinkedList<Sprite> CurrentAnimation { get { return _currentAnimation; } }
+        public CycledLinkedList<Sprite> IdleRightAnimation { get { return _idleRightAnimation; } }
+        public CycledLinkedList<Sprite> IdleLeftAnimation { get { return _idleLeftAnimation; } }
+        public CycledLinkedList<Sprite> MovingRightAnimation { get { return _movingRightAnimation; } }
+        public CycledLinkedList<Sprite> MovingLeftAnimation { get { return _movingLeftAnimation; } }
+        public Dictionary<Type, CycledLinkedList<Sprite>> StateAnimationPairs { get { return _stateAnimationPairs; } }
 
         private const string _folderPathFireBallSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\fireball2.png";
         private const string _folderPathFloorSprite = "D:\\[FILES]\\[УНИВЕР]\\2 курс\\1 семестр\\C#\\ЛР\\ЛР 4\\Lab4\\sprites\\floor.png";
@@ -40,13 +79,17 @@ namespace Lab4
         private const int ANIMATION_TIMER = 30;
         private int _animationTick = ANIMATION_TIMER;
 
+        public View()
+        {
+            
+        }
         public View(RenderWindow window)
         {
-            GameWindow = window;
+            _gameWindow = window;
 
             Platforms = new List<Sprite>();
-            FallingDamageObjects = new List<Sprite>();
-            FallingScoreObjects = new List<Sprite>();
+            _fallingDamageObjects = new List<Sprite>();
+            _fallingScoreObjects = new List<Sprite>();
 
             _idleRightAnimation = new CycledLinkedList<Sprite>();
             _idleLeftAnimation = new CycledLinkedList<Sprite>();
@@ -73,34 +116,40 @@ namespace Lab4
         }
         public void DrawScene()
         {
-            GameWindow.Clear(new Color(Color.Black));
+            _gameWindow.Clear(new Color(Color.Black));
             
-            GameWindow.Draw(CurrentPlayerModel);
+            _gameWindow.Draw(_currentPlayerModel);
             foreach (var p in Platforms)
             {
-                GameWindow.Draw(p);
+                _gameWindow.Draw(p);
             }
-            foreach (var g in FallingDamageObjects)
+            foreach (var g in _fallingDamageObjects)
             {
-                GameWindow.Draw(g);
+                _gameWindow.Draw(g);
             }
-            foreach (var m in FallingScoreObjects)
+            foreach (var m in _fallingScoreObjects)
             {
-                GameWindow.Draw(m);
+                _gameWindow.Draw(m);
             }
             PlayPlayerAnimation();
             _UI.Draw();
-            GameWindow.Display();
+            _gameWindow.Display();
         }
-        public void LoadLevel(Level level) 
+        public void LoadLevel(ILevel level) 
         {
+            if (level == null)
+            {
+                // Обработка случая, когда level не инициализирован
+                // Может быть выброшено исключение или выполнены другие действия
+                throw new ArgumentNullException(nameof(level));
+            }
             AddPlatforms(level);
-            AddPlayerModel(level.player);
+            AddPlayerModel(level.Player);
             SetBarrier(level);
         }
-        private void AddPlatforms(Level level)
+        private void AddPlatforms(ILevel level)
         {
-            foreach (var p in level.platforms)
+            foreach (var p in level.Platforms)
             {
                 Texture model = new Texture(_folderPathFloorSprite);
                 Sprite newPlatform = new Sprite(model);
@@ -112,29 +161,29 @@ namespace Lab4
         private void AddPlayerModel(Player player)
         {
             _stateAnimationPairs.TryGetValue(player.CurrentState.GetType(), out _currentAnimation);
-            CurrentPlayerModel = _currentAnimation.GetCurrent();
-            CurrentPlayerModel.Position = new Vector2f(player.X, player.Y);
+            _currentPlayerModel = _currentAnimation.GetCurrent();
+            _currentPlayerModel.Position = new Vector2f(player.X, player.Y);
             _controller.AddPlayerCollider();
         }
-        public void PlayPlayerAnimation()
+        private void PlayPlayerAnimation()
         {
             --_animationTick;
-            Vector2f currentPos = CurrentPlayerModel.Position;
+            Vector2f currentPos = _currentPlayerModel.Position;
             if (_animationTick==0)
             {
-                CurrentPlayerModel = _currentAnimation.GetNext();
+                _currentPlayerModel = _currentAnimation.GetNext();
                 _animationTick = ANIMATION_TIMER;
             }
             
-            CurrentPlayerModel.Position = currentPos;
+            _currentPlayerModel.Position = currentPos;
         }
         public void UpdateAnimation(Player p)
         {
-            Vector2f currentPos = CurrentPlayerModel.Position;
+            Vector2f currentPos = _currentPlayerModel.Position;
             _currentAnimation.Reset();
             _stateAnimationPairs.TryGetValue(p.CurrentState.GetType(), out _currentAnimation);
-            CurrentPlayerModel = _currentAnimation.GetCurrent();
-            CurrentPlayerModel.Position = currentPos;
+            _currentPlayerModel = _currentAnimation.GetCurrent();
+            _currentPlayerModel.Position = currentPos;
         }
         private void FillAnimationList(CycledLinkedList<Sprite> list, string path)
         {
@@ -154,11 +203,11 @@ namespace Lab4
                 Console.WriteLine("Folder doesn't exist");
             }
         }
-        private void SetBarrier(Level level)
+        private void SetBarrier(ILevel level)
         {
             int barrierSize = 300;
-            int windowX = (int)GameWindow.Size.X;
-            int windowY = (int)GameWindow.Size.Y;
+            int windowX = (int)_gameWindow.Size.X;
+            int windowY = (int)_gameWindow.Size.Y;
             _controller.AddBarrier(0, -barrierSize, windowX, barrierSize);
             _controller.AddBarrier(0, windowY, windowX, barrierSize);
             _controller.AddBarrier(-barrierSize, 0, barrierSize, windowY);
@@ -177,7 +226,7 @@ namespace Lab4
             Texture model = new Texture(_folderPathFireBallSprite);
             Sprite newFObjSprite = new Sprite(model);
             newFObjSprite.Position = new Vector2f(fObj.X, fObj.Y);
-            FallingDamageObjects.Add(newFObjSprite);
+            _fallingDamageObjects.Add(newFObjSprite);
             _controller.AddFallingObjectCollider(fObj, newFObjSprite.GetGlobalBounds());
         }
         private void AddScoreObject(FallingObject fObj)
@@ -185,7 +234,7 @@ namespace Lab4
             Texture model = new Texture(_folderPathMeatSprite);
             Sprite newFObjSprite = new Sprite(model);
             newFObjSprite.Position = new Vector2f(fObj.X, fObj.Y);
-            FallingScoreObjects.Add(newFObjSprite);
+            _fallingScoreObjects.Add(newFObjSprite);
             _controller.AddFallingObjectCollider(fObj, newFObjSprite.GetGlobalBounds());
         }
         public void UpdateDespawn(FallingObjectTypes type, FallingObject fobj)
@@ -197,13 +246,13 @@ namespace Lab4
         }
         private void RemoveDamageObjectSprite(int x, int y)
         {
-            Sprite toRemove = FallingDamageObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
-            FallingDamageObjects.Remove(toRemove);
+            Sprite toRemove = _fallingDamageObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
+            _fallingDamageObjects.Remove(toRemove);
         }
         private void RemoveScoreObjectSprite(int x, int y)
         {
-            Sprite toRemove = FallingScoreObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
-            FallingScoreObjects.Remove(toRemove);
+            Sprite toRemove = _fallingScoreObjects.FirstOrDefault(sprite => sprite.Position.X == x && sprite.Position.Y == y);
+            _fallingScoreObjects.Remove(toRemove);
         }
         public void Update(IPositionChanged subject)
         {
@@ -212,12 +261,12 @@ namespace Lab4
         }
         private void UpdateModelPosition(int x, int y)
         {
-            CurrentPlayerModel.Position = new Vector2f(x, y);
+            _currentPlayerModel.Position = new Vector2f(x, y);
         }
         public void UpdateFallingObjectPosition(int y)
         {
-            UpdatePositionForCollection(y, FallingDamageObjects);
-            UpdatePositionForCollection(y, FallingScoreObjects);
+            UpdatePositionForCollection(y, _fallingDamageObjects);
+            UpdatePositionForCollection(y, _fallingScoreObjects);
         }
         private void UpdatePositionForCollection(int y, List<Sprite> list)
         {
@@ -225,7 +274,7 @@ namespace Lab4
             foreach (var item in list)
             {
                 item.Position = new Vector2f(item.Position.X, item.Position.Y + y);
-                if (item.Position.Y >= GameWindow.Size.Y)
+                if (item.Position.Y >= _gameWindow.Size.Y)
                 {
                     s = item;
                 }
